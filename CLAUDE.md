@@ -64,12 +64,16 @@ src/
   content.config.ts       # docs 컬렉션 (docsLoader + docsSchema)
   plugins/satteri-katex.mjs  # 수식 렌더링 플러그인
   lib/roadmap.ts          # 로드맵 공통 모델: 난이도·상태 정의, 공개 검증, 사이드바 생성
+  lib/project.ts          # 단계별 프로젝트 공통 모델: Phase·결과물·마일스톤, 완료 검증, 개발 진행률
   data/numerical-roadmap.ts  # 수치해석 12 Part · 80강 목차 (강의 공개 상태의 기준)
+  data/fem-roadmap.ts     # FEM 10 Part · 70강 목차
+  data/fem-solver-project.ts  # FEM Solver Project Phase 1–6, 강의 연결(강의 id), 예정 컴포넌트
   components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
+  components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, load-project.ts
   content/docs/
     index.mdx             # 홈 (template: splash, 학습 분야 카드)
     numerical/            # index.mdx = 로드맵, root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
-    fem/                  # /fem/ 유한요소법 (index)
+    fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project
     quantum/              # /quantum/ 양자컴퓨팅 (index)
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
@@ -92,15 +96,15 @@ public/                   # 정적 파일 (favicon.svg)
 
 ### 사이드바
 
-- **수치해석**: `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
-- FEM·양자컴퓨팅: 아직 `astro.config.mjs`의 `sidebar`에 직접 등록한다. 로드맵을 만들면 수치해석과 같은 방식으로 바꾼다.
+- **수치해석·FEM**: `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다. FEM은 `extraItems`로 'FEM Solver Project' 링크를 넣는다.
+- 양자컴퓨팅: 아직 `astro.config.mjs`의 `sidebar`에 직접 등록한다. 로드맵을 만들면 같은 방식으로 바꾼다.
 
-### 로드맵 강의 공개 절차 (수치해석)
+### 로드맵 강의 공개 절차 (수치해석·FEM 공통)
 
-강의 목록과 공개 상태의 기준은 `src/data/numerical-roadmap.ts`이다. 번호는 배열 순서로 자동 계산되고, URL은 `slug`로 고정된다.
+강의 목록과 공개 상태의 기준은 `src/data/<분야>-roadmap.ts`이다. 번호는 배열 순서로 자동 계산되고, URL은 `slug`로 고정된다.
 
 1. 해당 강의의 `slug`를 확인한다. 공개 후에는 slug를 바꾸지 않는다. 제목과 순서는 바꿔도 URL에 영향이 없다.
-2. `src/content/docs/numerical/<slug>.mdx`에 강의를 작성한다(4절 표준 구성).
+2. `src/content/docs/<분야>/<slug>.mdx`에 강의를 작성한다(4절 표준 구성, FEM은 4절 'FEM 강의 설명 순서').
 3. 강의가 완성되면 데이터에 `status: 'published'`를 추가한다. 임시 안내문이나 빈 템플릿은 공개하지 않는다.
 4. `npm run build`로 확인한다. 로드맵 링크, 진행률, 사이드바는 자동으로 반영된다.
    - 페이지가 없거나 `draft: true`인데 `published`로 표시하면 **빌드가 실패한다**.
@@ -108,6 +112,20 @@ public/                   # 정적 파일 (favicon.svg)
 - 새 강의를 추가할 때는 원하는 위치에 `{ id, title, en, slug }`를 넣는다. `id`와 `slug`는 중복될 수 없다(빌드 시 검사).
 - 페이지를 옮길 때는 `git mv`로 파일을 이동하고, 데이터의 `slug`를 수정하고, `astro.config.mjs`의 `redirects`에 이전 URL → 새 URL을 추가한다. 예: `/numerical/bisection` → `/numerical/root-finding/bisection/`
 - 새 상태(예: draft)는 `src/lib/roadmap.ts`의 `STATUSES`에 추가한다.
+- 난이도는 `intro`(입문)·`basic`·`intermediate`·`advanced`·`expert`·`research`이다. 로드맵별 라벨은 `levelLabels`로 바꾼다(FEM: research → '연구'). 필터에는 사용하는 난이도만 표시된다.
+- FEM 강의 `id`는 솔버 프로젝트의 연결 키이므로 **바꾸지 않는다**. 바꾸면 `fem-solver-project.ts`도 함께 수정해야 하고, 그렇지 않으면 빌드가 실패한다.
+
+### FEM Solver Project 진행 절차
+
+데이터는 `src/data/fem-solver-project.ts`, 페이지는 `/fem/solver-project/`이다. **솔버 개발 진행률(완료 Phase / 6)과 강의 공개 진행률은 별개 지표이다.**
+
+1. Phase 작업을 시작하면 해당 Phase(또는 Phase 6의 마일스톤)를 `status: 'in-progress'`로 바꾼다.
+2. 결과물(코드·시각화)이 실제로 생기면 결과물에 `page`(콘텐츠 ID, 예: `fem/solver-project/phase-1`) 또는 `file`(public/ 기준 경로, 예: `code/fem/mesh.py`)을 지정하고 `status: 'completed'`로 바꾼다.
+3. 모든 결과물(과 마일스톤)이 completed일 때만 Phase를 `completed`로 바꾼다.
+- 검증(빌드 실패): 결과물 없이 완료 표시, page/file 경로 없음, 미완료 항목이 있는 Phase를 완료 표시, 로드맵에 없는 강의 id 연결.
+- '구조해석 확장'(checkpoints)은 Phase 5 뒤의 별도 마일스톤이며 진행률에 포함하지 않는다.
+- 예정 인터랙티브 컴포넌트(MeshViewer, ElementExplorer, AssemblyVisualizer, FEMSolverDemo, FieldViewer, DomainPartitionViewer)는 `components`에 계획만 있다. **실제로 구현하기 전에는 동작하는 것처럼 표현하지 않는다.** 구현하면 `src/components/fem/`에 만들고 status를 올린다.
+- 솔버 코드는 `public/code/fem/` 아래에 둔다(다운로드 가능). 페이지에는 핵심 코드만 싣는다.
 
 ### 알려진 사항 (임의로 고치지 않음)
 
@@ -142,6 +160,23 @@ public/                   # 정적 파일 (favicon.svg)
 8. 오차, 수렴 특성 또는 성능 분석
 9. 연습 문제
 10. 핵심 요약 및 참고자료
+
+### FEM 강의 설명 순서
+
+FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우선한다. 기본 흐름은 다음과 같다.
+
+1. 실제 물리 현상 제시
+2. 개념도와 직관적 설명
+3. 대표 수식 제시
+4. 수식의 각 항이 의미하는 물리량 설명
+5. Python 코드로 구현
+6. 계산 결과 시각화
+7. 매개변수 변경 실험
+8. 수치적 정확성과 계산 비용 분석
+
+- 엄밀성이 필요한 부분은 생략하지 않는다. 긴 유도는 Starlight `<details>` 등으로 '심화 설명'에 분리한다.
+- 수식은 그림, 코드, 인터랙티브 시각화와 연결한다.
+- 강의가 솔버 프로젝트의 Phase와 연결되어 있으면, 강의 끝에서 해당 Phase에서 무엇을 구현하는지 안내한다.
 
 ---
 

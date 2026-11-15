@@ -1,0 +1,104 @@
+---
+// 향후 구현할 인터랙티브 학습 컴포넌트 계획표 (구현 전에는 '준비 중'으로만 표시)
+// 사용법 (MDX): <ProjectComponentPlan project={femSolverProject} roadmap={femRoadmap} />
+import { PROJECT_STATUSES, type ProjectDef } from '../../lib/project';
+import type { RoadmapDef } from '../../lib/roadmap';
+import { loadProject } from './load-project';
+
+interface Props {
+  project: ProjectDef;
+  roadmap: RoadmapDef;
+}
+
+const { project, roadmap } = Astro.props;
+const resolved = await loadProject(project, roadmap);
+const phaseOf = new Map(resolved.phases.map((p) => [p.id, p]));
+---
+
+<ul class="pj-plan not-content">
+  {
+    resolved.components.map((c) => {
+      const phase = phaseOf.get(c.phase)!;
+      const status = c.status ?? 'planned';
+      return (
+        <li data-status={status}>
+          <div class="pj-plan__head">
+            <code>{c.name}</code>
+            <span class="pj-plan__status">{PROJECT_STATUSES[status].label}</span>
+          </div>
+          <p class="pj-plan__role">{c.role}</p>
+          <a class="pj-plan__phase" href={`#phase-${phase.id}`}>
+            Phase {phase.number} · {phase.title}
+          </a>
+        </li>
+      );
+    })
+  }
+</ul>
+
+<style>
+  .pj-plan {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pj-plan li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.9rem 1rem;
+    border: 1px dashed var(--sl-color-gray-5);
+    border-radius: 12px;
+  }
+  .pj-plan__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pj-plan__head code {
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  .pj-plan__status {
+    padding: 0.05rem 0.45rem;
+    border-radius: 6px;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-3);
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  [data-status='in-progress'] .pj-plan__status {
+    background: color-mix(in srgb, #fbbf24 20%, transparent);
+    color: var(--sl-color-white);
+  }
+  [data-status='completed'] .pj-plan__status {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+  }
+  .pj-plan__role {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--sl-color-gray-2);
+    word-break: keep-all;
+  }
+  .pj-plan__phase {
+    margin-top: auto;
+    font-size: 0.78rem;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+  .pj-plan__phase:hover {
+    text-decoration: underline;
+  }
+  @media (max-width: 600px) {
+    .pj-plan {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

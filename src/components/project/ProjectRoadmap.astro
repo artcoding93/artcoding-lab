@@ -1,0 +1,713 @@
+---
+// 단계별 개발 프로젝트 로드맵: 개발 진행률 · 파이프라인 · Phase 타임라인 · 연결 강의
+// 사용법 (MDX): <ProjectRoadmap project={femSolverProject} roadmap={femRoadmap} />
+import { PROJECT_STATUSES, type ProjectDef } from '../../lib/project';
+import type { RoadmapDef, ResolvedLecture } from '../../lib/roadmap';
+import { STATUSES } from '../../lib/roadmap';
+import { loadProject } from './load-project';
+
+interface Props {
+  project: ProjectDef;
+  roadmap: RoadmapDef;
+}
+
+const { project, roadmap } = Astro.props;
+const resolved = await loadProject(project, roadmap);
+const { stats } = resolved;
+const pad = (n: number) => String(n).padStart(2, '0');
+const lecturePercent = stats.lectures.total
+  ? Math.round((stats.lectures.published / stats.lectures.total) * 1000) / 10
+  : 0;
+const checkpointsAfter = (phaseId: string) => resolved.checkpoints.filter((c) => c.afterPhase === phaseId);
+const publishedCount = (lectures: ResolvedLecture[]) => lectures.filter((l) => l.isPublic).length;
+---
+
+<div class="project not-content">
+  <!-- 진행률: 개발 진행률과 강의 공개 진행률을 분리해 표시 -->
+  <div class="pj-metrics">
+    <section class="pj-metric" aria-labelledby={`${resolved.id}-dev`}>
+      <p class="pj-metric__eyebrow">솔버 개발 진행률</p>
+      <p class="pj-metric__value" id={`${resolved.id}-dev`}>
+        <strong>{stats.phases.completed}</strong> / {stats.phases.total} Phase 완료
+        <span class="pj-metric__pct">{stats.phases.percent}%</span>
+      </p>
+      <div
+        class="pj-bar"
+        role="progressbar"
+        aria-label="솔버 개발 진행률"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={stats.phases.percent}
+      >
+        <div class="pj-bar__fill pj-bar__fill--dev" style={`width: ${stats.phases.percent}%`}></div>
+      </div>
+      <p class="pj-metric__note">
+        완료된 Phase 기준 · 개발 중 {stats.phases.inProgress}개 · 세부 단계 {stats.steps.completed}/{stats.steps.total} 완료
+      </p>
+    </section>
+
+    <section class="pj-metric" aria-labelledby={`${resolved.id}-lec`}>
+      <p class="pj-metric__eyebrow">연결 강의 공개 현황</p>
+      <p class="pj-metric__value" id={`${resolved.id}-lec`}>
+        <strong>{stats.lectures.published}</strong> / {stats.lectures.total}강 공개
+        <span class="pj-metric__pct">{lecturePercent}%</span>
+      </p>
+      <div
+        class="pj-bar"
+        role="progressbar"
+        aria-label="연결 강의 공개 비율"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={lecturePercent}
+      >
+        <div class="pj-bar__fill" style={`width: ${lecturePercent}%`}></div>
+      </div>
+      <p class="pj-metric__note">Phase 1–6에 연결된 강의 중 사이트에 공개된 강의 (개발 진행률과 별개)</p>
+    </section>
+  </div>
+
+  <!-- 전체 파이프라인 -->
+  <nav class="pj-pipeline" aria-label="개발 파이프라인">
+    <ol>
+      {
+        resolved.phases.map((phase) => (
+          <li data-status={phase.status}>
+            <a href={`#phase-${phase.id}`}>
+              <span class="pj-pipeline__num">{phase.number}</span>
+              <span class="pj-pipeline__text">
+                <span class="pj-pipeline__name">{phase.name}</span>
+                <span class="pj-pipeline__title">{phase.title}</span>
+              </span>
+              <span class="pj-status" data-status={phase.status}>
+                {PROJECT_STATUSES[phase.status].label}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </nav>
+
+  <!-- Phase 타임라인 -->
+  <ol class="pj-timeline">
+    {
+      resolved.phases.map((phase) => (
+        <Fragment>
+          <li class="pj-phase" id={`phase-${phase.id}`} data-status={phase.status}>
+            <span class="pj-phase__marker" aria-hidden="true">{phase.number}</span>
+            <article class="pj-card">
+              <header class="pj-card__head">
+                <div>
+                  <p class="pj-card__eyebrow">PHASE {phase.number} · {phase.name}</p>
+                  <h3 class="pj-card__title">{phase.title}</h3>
+                </div>
+                <span class="pj-status" data-status={phase.status}>
+                  {PROJECT_STATUSES[phase.status].label}
+                </span>
+              </header>
+
+              <p class="pj-card__goal">
+                <span class="pj-label">목표</span> {phase.goal}
+              </p>
+
+              <div class="pj-card__grid">
+                <div>
+                  <p class="pj-label">학습 요소</p>
+                  <ul class="pj-topics">
+                    {phase.topics.map((topic) => <li>{topic}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <p class="pj-label">결과물</p>
+                  <ul class="pj-deliverables">
+                    {phase.deliverables.map((d) => (
+                      <li>
+                        {d.href && d.status === 'completed' ? <a href={d.href}>{d.title}</a> : <span>{d.title}</span>}
+                        <span class="pj-status pj-status--sm" data-status={d.status}>
+                          {PROJECT_STATUSES[d.status].label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {phase.components.length > 0 && (
+                <p class="pj-components">
+                  <span class="pj-label">예정 인터랙티브 컴포넌트</span>
+                  {phase.components.map((c) => (
+                    <span class="pj-component">
+                      <code>{c.name}</code>
+                      <span class="pj-status pj-status--sm" data-status={c.status ?? 'planned'}>
+                        {PROJECT_STATUSES[c.status ?? 'planned'].label}
+                      </span>
+                    </span>
+                  ))}
+                </p>
+              )}
+
+              {phase.milestones.length > 0 ? (
+                <div class="pj-milestones">
+                  <p class="pj-label">세부 단계</p>
+                  {phase.milestones.map((m) => (
+                    <details class="pj-lectures pj-lectures--milestone">
+                      <summary>
+                        <span class="pj-lectures__title">{m.title}</span>
+                        <span class="pj-lectures__count">
+                          강의 {m.lectures.length} · 공개 {publishedCount(m.lectures)}
+                        </span>
+                        <span class="pj-status pj-status--sm" data-status={m.status}>
+                          {PROJECT_STATUSES[m.status].label}
+                        </span>
+                      </summary>
+                      <ul>
+                        {m.lectures.map((l) => (
+                          <li class:list={[l.isPublic ? 'is-public' : 'is-planned']}>
+                            <span class="pj-lnum">{pad(l.number)}</span>
+                            {l.isPublic ? <a href={l.href}>{l.title}</a> : <span>{l.title}</span>}
+                            <span class:list={['pj-lbadge', `pj-lbadge--${l.status}`]}>{STATUSES[l.status].label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ))}
+                </div>
+              ) : (
+                <details class="pj-lectures" open={phase.lectures.length <= 9}>
+                  <summary>
+                    <span class="pj-lectures__title">연결 강의</span>
+                    <span class="pj-lectures__count">
+                      {phase.lectures.length}강 · 공개 {publishedCount(phase.lectures)}
+                    </span>
+                  </summary>
+                  <ul>
+                    {phase.lectures.map((l) => (
+                      <li class:list={[l.isPublic ? 'is-public' : 'is-planned']}>
+                        <span class="pj-lnum">{pad(l.number)}</span>
+                        {l.isPublic ? <a href={l.href}>{l.title}</a> : <span>{l.title}</span>}
+                        <span class:list={['pj-lbadge', `pj-lbadge--${l.status}`]}>{STATUSES[l.status].label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </article>
+          </li>
+
+          {checkpointsAfter(phase.id).map((c) => (
+            <li class="pj-checkpoint" id={`milestone-${c.id}`} data-status={c.status}>
+              <span class="pj-phase__marker pj-phase__marker--flag" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 21V4m0 0h11l-2 4 2 4H5" /></svg>
+              </span>
+              <article class="pj-card pj-card--checkpoint">
+                <header class="pj-card__head">
+                  <div>
+                    <p class="pj-card__eyebrow">별도 마일스톤 · 진행률 미포함</p>
+                    <h3 class="pj-card__title">{c.title}</h3>
+                  </div>
+                  <span class="pj-status" data-status={c.status}>
+                    {PROJECT_STATUSES[c.status].label}
+                  </span>
+                </header>
+                <p class="pj-card__goal">{c.description}</p>
+                <details class="pj-lectures">
+                  <summary>
+                    <span class="pj-lectures__title">관련 강의</span>
+                    <span class="pj-lectures__count">
+                      {c.lectures.length}강 · 공개 {publishedCount(c.lectures)}
+                    </span>
+                  </summary>
+                  <ul>
+                    {c.lectures.map((l) => (
+                      <li class:list={[l.isPublic ? 'is-public' : 'is-planned']}>
+                        <span class="pj-lnum">{pad(l.number)}</span>
+                        {l.isPublic ? <a href={l.href}>{l.title}</a> : <span>{l.title}</span>}
+                        <span class:list={['pj-lbadge', `pj-lbadge--${l.status}`]}>{STATUSES[l.status].label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </article>
+            </li>
+          ))}
+        </Fragment>
+      ))
+    }
+  </ol>
+</div>
+
+<style>
+  .project {
+    --pj-planned: var(--sl-color-gray-3);
+    --pj-progress: #fbbf24;
+    --pj-done: #4ade80;
+    --pj-border: var(--sl-color-gray-5);
+    --pj-muted: var(--sl-color-gray-3);
+    --pj-surface-2: var(--sl-color-bg-nav);
+    margin: 1.5rem 0;
+    color: var(--sl-color-text);
+  }
+  :global(:root[data-theme='light']) .project {
+    --pj-progress: #b45309;
+    --pj-done: #15803d;
+    --pj-surface-2: var(--sl-color-gray-7);
+  }
+  [data-status='planned'] { --pj-c: var(--pj-planned); }
+  [data-status='in-progress'] { --pj-c: var(--pj-progress); }
+  [data-status='completed'] { --pj-c: var(--pj-done); }
+
+  .pj-label {
+    display: block;
+    margin: 0 0 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--pj-muted);
+  }
+  .pj-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid color-mix(in srgb, var(--pj-c) 45%, transparent);
+    border-radius: 999px;
+    color: var(--pj-c);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pj-status::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--pj-c);
+  }
+  .pj-status[data-status='planned']::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--pj-c);
+  }
+  .pj-status--sm {
+    padding: 0.05rem 0.45rem;
+    font-size: 0.7rem;
+  }
+
+  /* ── 진행률 ── */
+  .pj-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .pj-metric {
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--pj-border);
+    border-radius: 14px;
+    background: var(--pj-surface-2);
+  }
+  .pj-metric__eyebrow {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--pj-muted);
+  }
+  .pj-metric__value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    margin: 0.35rem 0 0.6rem;
+    font-size: 0.95rem;
+  }
+  .pj-metric__value strong {
+    font-size: 1.6rem;
+    color: var(--sl-color-white);
+    font-variant-numeric: tabular-nums;
+  }
+  .pj-metric__pct {
+    margin-left: auto;
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .pj-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--sl-color-gray-6);
+    box-shadow: inset 0 0 0 1px var(--pj-border);
+    overflow: hidden;
+  }
+  .pj-bar__fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--sl-color-accent);
+  }
+  .pj-bar__fill--dev {
+    background: var(--pj-done);
+  }
+  .pj-metric__note {
+    margin: 0.55rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--pj-muted);
+    word-break: keep-all;
+  }
+
+  /* ── 파이프라인 ── */
+  .pj-pipeline ol {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+  }
+  .pj-pipeline a {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 0.35rem 0.65rem;
+    height: 100%;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--pj-border);
+    border-top: 3px solid var(--pj-c);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color 0.15s;
+  }
+  .pj-pipeline a:hover {
+    background: var(--pj-surface-2);
+  }
+  .pj-pipeline a:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+  .pj-pipeline__num {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--sl-color-gray-6);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .pj-pipeline__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .pj-pipeline__name {
+    font-size: 0.7rem;
+    color: var(--pj-muted);
+    line-height: 1.3;
+  }
+  .pj-pipeline__title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+    word-break: keep-all;
+  }
+  .pj-pipeline .pj-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  /* ── 타임라인 ── */
+  .pj-timeline {
+    position: relative;
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pj-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 1.05rem;
+    width: 2px;
+    background: var(--pj-border);
+  }
+  .pj-phase,
+  .pj-checkpoint {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.1rem minmax(0, 1fr);
+    gap: 1rem;
+    scroll-margin-top: calc(var(--sl-nav-height, 3.5rem) + 1rem);
+  }
+  .pj-phase + .pj-phase,
+  .pj-phase + .pj-checkpoint,
+  .pj-checkpoint + .pj-phase {
+    margin-top: 1.25rem;
+  }
+  .pj-phase__marker {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    margin-top: 1rem;
+    border: 2px solid var(--pj-c);
+    border-radius: 50%;
+    background: var(--sl-color-bg);
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .pj-phase[data-status='completed'] .pj-phase__marker {
+    background: var(--pj-c);
+    color: var(--sl-color-black);
+  }
+  .pj-phase__marker--flag {
+    border-style: dashed;
+  }
+  .pj-phase__marker svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: var(--pj-muted);
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+  .pj-card {
+    min-width: 0;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--pj-border);
+    border-radius: 14px;
+    background: var(--sl-color-bg);
+  }
+  .pj-card--checkpoint {
+    border-style: dashed;
+    background: transparent;
+  }
+  .pj-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .pj-card__eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--pj-muted);
+  }
+  .pj-card__title {
+    margin: 0.15rem 0 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+    word-break: keep-all;
+  }
+  .pj-card__goal {
+    margin: 0.75rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    word-break: keep-all;
+  }
+  .pj-card__goal .pj-label {
+    display: inline;
+    margin-right: 0.35rem;
+  }
+  .pj-card__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 1rem 1.5rem;
+    margin-top: 1rem;
+  }
+  .pj-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pj-topics li {
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    background: var(--pj-surface-2);
+    font-size: 0.8rem;
+  }
+  .pj-deliverables {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.88rem;
+  }
+  .pj-deliverables li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pj-deliverables a {
+    color: var(--sl-color-text-accent);
+  }
+  .pj-components {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+    margin: 1rem 0 0;
+  }
+  .pj-components .pj-label {
+    display: inline;
+    margin: 0 0.25rem 0 0;
+  }
+  .pj-component {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .pj-component code {
+    font-size: 0.8rem;
+  }
+
+  /* ── 연결 강의 ── */
+  .pj-milestones {
+    margin-top: 1rem;
+  }
+  .pj-milestones .pj-lectures + .pj-lectures {
+    margin-top: 0.4rem;
+  }
+  .pj-lectures {
+    margin-top: 1rem;
+    border: 1px solid var(--pj-border);
+    border-radius: 10px;
+  }
+  .pj-lectures--milestone {
+    margin-top: 0;
+  }
+  .pj-lectures summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.75rem;
+    padding: 0.6rem 0.85rem;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.88rem;
+  }
+  .pj-lectures summary::-webkit-details-marker {
+    display: none;
+  }
+  .pj-lectures summary::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 2px solid var(--pj-muted);
+    border-bottom: 2px solid var(--pj-muted);
+    transform: rotate(-45deg);
+    transition: transform 0.2s;
+  }
+  .pj-lectures[open] summary::before {
+    transform: rotate(45deg);
+  }
+  .pj-lectures summary:hover {
+    background: var(--pj-surface-2);
+  }
+  .pj-lectures summary:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+  .pj-lectures__title {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .pj-lectures__count {
+    font-size: 0.78rem;
+    color: var(--pj-muted);
+  }
+  .pj-lectures--milestone .pj-status {
+    margin-left: auto;
+  }
+  .pj-lectures ul {
+    margin: 0;
+    padding: 0.25rem 0.85rem 0.6rem;
+    list-style: none;
+    border-top: 1px solid var(--pj-border);
+  }
+  .pj-lectures li {
+    display: grid;
+    grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    font-size: 0.88rem;
+  }
+  .pj-lnum {
+    font-family: var(--sl-font-mono);
+    font-size: 0.78rem;
+    color: var(--pj-muted);
+  }
+  .pj-lectures li.is-public a {
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+  .pj-lectures li.is-public a:hover {
+    text-decoration: underline;
+  }
+  .pj-lectures li.is-planned span:not(.pj-lbadge) {
+    color: var(--sl-color-gray-3);
+  }
+  .pj-lectures li.is-planned .pj-lnum {
+    color: var(--sl-color-gray-4);
+  }
+  .pj-lbadge {
+    padding: 0.05rem 0.45rem;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pj-lbadge--published {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+  }
+  .pj-lbadge--planned {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-3);
+  }
+
+  /* ── 반응형 ── */
+  @media (max-width: 900px) {
+    .pj-pipeline ol {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 600px) {
+    .pj-metrics,
+    .pj-card__grid {
+      grid-template-columns: 1fr;
+    }
+    .pj-pipeline ol {
+      grid-template-columns: 1fr;
+    }
+    .pj-timeline::before {
+      left: 0.8rem;
+    }
+    .pj-phase,
+    .pj-checkpoint {
+      grid-template-columns: 1.6rem minmax(0, 1fr);
+      gap: 0.6rem;
+    }
+    .pj-phase__marker {
+      width: 1.6rem;
+      height: 1.6rem;
+      font-size: 0.8rem;
+    }
+    .pj-card {
+      padding: 0.9rem 0.9rem;
+    }
+    .pj-card__head {
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+  }
+</style>

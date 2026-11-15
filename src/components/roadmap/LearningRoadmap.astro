@@ -4,8 +4,6 @@
 // FEM·양자컴퓨팅도 같은 형식의 데이터(src/lib/roadmap.ts의 RoadmapDef)만 만들면 그대로 재사용할 수 있다.
 import { getCollection } from 'astro:content';
 import {
-  LEVELS,
-  LEVEL_ORDER,
   STATUSES,
   resolveRoadmap,
   type RoadmapDef,
@@ -31,7 +29,7 @@ const resolved = resolveRoadmap(roadmap, {
   minBodyLength: 800,
   basePath: import.meta.env.BASE_URL,
 });
-const { stats } = resolved;
+const { stats, levelLabels } = resolved;
 const uid = `roadmap-${resolved.id}`;
 const pad = (n: number) => String(n).padStart(2, '0');
 ---
@@ -103,10 +101,10 @@ const pad = (n: number) => String(n).padStart(2, '0');
     <div class="rm-filters" role="group" aria-label="난이도 필터">
       <button type="button" class="rm-chip" data-filter="all" aria-pressed="true">전체</button>
       {
-        LEVEL_ORDER.map((level) => (
+        resolved.levels.map((level) => (
           <button type="button" class="rm-chip" data-filter={level} data-level={level} aria-pressed="false">
             <span class="rm-dot" aria-hidden="true" />
-            {LEVELS[level].label}
+            {levelLabels[level]}
           </button>
         ))
       }
@@ -134,7 +132,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
             </span>
             <span class="rm-part__meta">
               <span class="rm-level" data-level={part.level}>
-                {LEVELS[part.level].label}
+                {levelLabels[part.level]}
               </span>
               <span class="rm-part__count">
                 {part.lectures.length}강 · 공개 {part.publishedCount}
@@ -158,7 +156,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
                   </span>
                   {lecture.level !== part.level && (
                     <span class="rm-level rm-level--sm" data-level={lecture.level}>
-                      {LEVELS[lecture.level].label}
+                      {levelLabels[lecture.level]}
                     </span>
                   )}
                   <span class:list={['rm-badge', `rm-badge--${lecture.status}`]}>
@@ -283,6 +281,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 <style>
   /* ── 난이도 색상 (기본: 다크 모드, 라이트 모드에서 재정의) ── */
   .roadmap {
+    --rm-intro: #2dd4bf;
     --rm-basic: #4ade80;
     --rm-intermediate: #60a5fa;
     --rm-advanced: #c084fc;
@@ -298,6 +297,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     color: var(--sl-color-text);
   }
   :global(:root[data-theme='light']) .roadmap {
+    --rm-intro: #0f766e;
     --rm-basic: #15803d;
     --rm-intermediate: #1d4ed8;
     --rm-advanced: #7e22ce;
@@ -305,6 +305,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     --rm-research: #be185d;
     --rm-surface-2: var(--sl-color-gray-7);
   }
+  [data-level='intro'] { --rm-c: var(--rm-intro); }
   [data-level='basic'] { --rm-c: var(--rm-basic); }
   [data-level='intermediate'] { --rm-c: var(--rm-intermediate); }
   [data-level='advanced'] { --rm-c: var(--rm-advanced); }

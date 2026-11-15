@@ -5,7 +5,9 @@
 // - 공개 여부 판정은 `resolveRoadmap()`이 담당한다: 데이터의 status와 실제 콘텐츠 페이지 존재 여부를 함께 확인한다.
 
 // ─── 난이도 ────────────────────────────────────────────────
+// 로드맵별로 라벨을 바꾸려면 RoadmapDef.levelLabels를 사용한다 (예: research → '연구').
 export const LEVELS = {
+  intro: { label: '입문' },
   basic: { label: '기초' },
   intermediate: { label: '중급' },
   advanced: { label: '심화' },
@@ -55,6 +57,8 @@ export interface RoadmapDef {
   /** 콘텐츠 경로 접두사. 예: 'numerical' */
   basePath: string;
   title: string;
+  /** 이 로드맵에서만 쓰는 난이도 라벨 (기본값은 LEVELS의 label) */
+  levelLabels?: Partial<Record<LevelId, string>>;
   parts: PartDef[];
 }
 
@@ -106,6 +110,15 @@ export interface ResolvedRoadmap {
   title: string;
   parts: ResolvedPart[];
   stats: RoadmapStats;
+  /** 이 로드맵에서 실제로 사용하는 난이도 (표준 순서) — 필터 버튼에 사용 */
+  levels: LevelId[];
+  /** 난이도 라벨 (levelLabels 반영) */
+  levelLabels: Record<LevelId, string>;
+}
+
+/** 강의 ID → 해석된 강의. 프로젝트 등 다른 데이터에서 강의를 ID로 연결할 때 사용한다. */
+export function lectureIndex(resolved: ResolvedRoadmap): Map<string, ResolvedLecture> {
+  return new Map(resolved.parts.flatMap((part) => part.lectures.map((lecture) => [lecture.id, lecture] as const)));
 }
 
 const ROMAN = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ'];
@@ -230,11 +243,18 @@ export function resolveRoadmap(roadmap: RoadmapDef, options: ResolveOptions): Re
   const published = parts.reduce((sum, p) => sum + p.publishedCount, 0);
   const percent = total ? Math.round((published / total) * 1000) / 10 : 0;
 
+  const used = new Set(parts.flatMap((p) => [p.level, ...p.lectures.map((l) => l.level)]));
+  const levelLabels = Object.fromEntries(
+    LEVEL_ORDER.map((id) => [id, roadmap.levelLabels?.[id] ?? LEVELS[id].label]),
+  ) as Record<LevelId, string>;
+
   return {
     id: roadmap.id,
     title: roadmap.title,
     parts,
     stats: { total, published, planned: total - published, percent },
+    levels: LEVEL_ORDER.filter((id) => used.has(id)),
+    levelLabels,
   };
 }
 
@@ -255,7 +275,12 @@ interface SidebarGroup {
  */
 export function roadmapSidebar(
   roadmap: RoadmapDef,
-  options: { label: string; overviewLabel: string },
+  options: {
+    label: string;
+    overviewLabel: string;
+    /** 로드맵 링크 바로 다음에 넣을 고정 링크 (예: 솔버 프로젝트 페이지) */
+    extraItems?: SidebarLink[];
+  },
 ): SidebarGroup {
   validateRoadmap(roadmap);
   const partGroups: SidebarGroup[] = [];
@@ -271,6 +296,10 @@ export function roadmapSidebar(
 
   return {
     label: options.label,
-    items: [{ label: options.overviewLabel, slug: roadmap.basePath }, ...partGroups],
+    items: [
+      { label: options.overviewLabel, slug: roadmap.basePath },
+      ...(options.extraItems ?? []),
+      ...partGroups,
+    ],
   };
 }

@@ -1,0 +1,35 @@
+---
+title: FEM 학습 로드맵
+description: 물리 현상과 메시부터 전역 조립, 솔버, 시각화, 병렬·분산 계산까지 10개 Part, 70개 강의로 구성된 유한요소법(Finite Element Method) 학습 로드맵
+tableOfContents: false
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+import LearningRoadmap from '../../../components/roadmap/LearningRoadmap.astro';
+import { femRoadmap } from '../../../data/fem-roadmap';
+
+유한요소법(Finite Element Method, FEM)을 긴 수학적 유도보다 **개념과 계산 과정** 중심으로 학습합니다. 대표 수식의 의미를 그림, 코드, 인터랙티브 시각화와 연결하고, 배운 내용을 하나의 2D FEM 솔버로 직접 구현합니다.
+
+**학습 흐름** 물리 현상 → 메시 분할 → 요소 계산 → 전역 행렬 조립 → 경계조건 → 솔버 → 결과 시각화 → 병렬·분산 계산
+
+<details>
+<summary>이 로드맵을 마치면 답할 수 있는 질문</summary>
+
+- 왜 연속적인 물리 영역을 메시로 나누는가?
+- 절점과 요소는 어떤 관계인가?
+- 형상함수는 무엇을 근사하는가?
+- 요소 강성행렬은 어떤 물리적 의미를 갖는가?
+- 개별 요소 계산이 어떻게 전역 행렬로 결합되는가?
+- 왜 FEM 행렬은 희소행렬인가?
+- 계산 결과를 어떻게 물리적으로 해석하는가?
+- 대규모 FEM에서는 왜 병렬·분산 계산이 필요한가?
+
+</details>
+
+<LinkCard
+  title="FEM Solver Project"
+  description="강의와 연결된 6단계 프로젝트로 Python 2D FEM 솔버를 직접 구현하고 병렬·분산 계산까지 확장합니다."
+  href="/fem/solver-project/"
+/>
+
+<LearningRoadmap roadmap={femRoadmap} />

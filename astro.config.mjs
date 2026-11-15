@@ -5,6 +5,7 @@ import { satteri } from '@astrojs/markdown-satteri';
 import { satteriKatex } from './src/plugins/satteri-katex.mjs';
 import { roadmapSidebar } from './src/lib/roadmap.ts';
 import { numericalRoadmap } from './src/data/numerical-roadmap.ts';
+import { femRoadmap } from './src/data/fem-roadmap.ts';
 
 export default defineConfig({
   // 이동한 페이지의 이전 URL → 새 URL (외부 링크·북마크 보존)
@@ -38,12 +39,12 @@ export default defineConfig({
       sidebar: [
         // 수치해석: 로드맵 + 공개된 강의만 자동 표시 (src/data/numerical-roadmap.ts 기준)
         roadmapSidebar(numericalRoadmap, { label: '수치해석', overviewLabel: '수치해석 로드맵' }),
-        {
+        // FEM: 로드맵 + 솔버 프로젝트 + 공개된 강의만 자동 표시 (src/data/fem-roadmap.ts 기준)
+        roadmapSidebar(femRoadmap, {
           label: '유한요소법 (FEM)',
-          items: [
-            { label: 'FEM 소개', slug: 'fem' },
-          ],
-        },
+          overviewLabel: 'FEM 학습 로드맵',
+          extraItems: [{ label: 'FEM Solver Project', slug: 'fem/solver-project' }],
+        }),
         {
           label: '양자컴퓨팅',
           items: [

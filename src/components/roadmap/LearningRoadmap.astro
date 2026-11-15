@@ -1,0 +1,781 @@
+---
+// 학습 로드맵: 공개 현황 · 검색 · 난이도 필터 · Part 접기/펼치기
+// 사용법 (MDX): <LearningRoadmap roadmap={numericalRoadmap} />
+// FEM·양자컴퓨팅도 같은 형식의 데이터(src/lib/roadmap.ts의 RoadmapDef)만 만들면 그대로 재사용할 수 있다.
+import { getCollection } from 'astro:content';
+import {
+  LEVELS,
+  LEVEL_ORDER,
+  STATUSES,
+  resolveRoadmap,
+  type RoadmapDef,
+  type ExistingPage,
+} from '../../lib/roadmap';
+
+interface Props {
+  roadmap: RoadmapDef;
+  /** 처음에 펼쳐 둘 Part 번호들 (기본: 첫 번째 Part) */
+  initiallyOpen?: number[];
+}
+
+const { roadmap, initiallyOpen = [1] } = Astro.props;
+
+// 실제 콘텐츠 페이지 목록 (draft 제외) — 공개 상태 검증에 사용
+const entries = await getCollection('docs', (entry) => !entry.data.draft);
+const pages = new Map<string, ExistingPage>(
+  entries.map((entry) => [entry.id, { bodyLength: entry.body?.trim().length ?? 0 }]),
+);
+
+const resolved = resolveRoadmap(roadmap, {
+  pages,
+  minBodyLength: 800,
+  basePath: import.meta.env.BASE_URL,
+});
+const { stats } = resolved;
+const uid = `roadmap-${resolved.id}`;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<section class="roadmap not-content" data-roadmap aria-label={`${resolved.title} 학습 로드맵`}>
+  <!-- 콘텐츠 공개 현황 (사이트 제작 진행률) -->
+  <div class="rm-status">
+    <div class="rm-status__head">
+      <h2 class="rm-status__title">콘텐츠 공개 현황</h2>
+      <span class="rm-status__hint">사이트 제작 진행률</span>
+    </div>
+
+    <dl class="rm-stats">
+      <div class="rm-stat">
+        <dt>전체 강의</dt>
+        <dd>{stats.total}<span>개</span></dd>
+      </div>
+      <div class="rm-stat">
+        <dt>공개된 강의</dt>
+        <dd>{stats.published}<span>개</span></dd>
+      </div>
+      <div class="rm-stat">
+        <dt>준비 중인 강의</dt>
+        <dd>{stats.planned}<span>개</span></dd>
+      </div>
+    </dl>
+
+    <div class="rm-progress">
+      <div class="rm-progress__label">
+        <span id={`${uid}-progress-label`}>공개 진행률</span>
+        <strong>{stats.percent}%</strong>
+      </div>
+      <div
+        class="rm-progress__track"
+        role="progressbar"
+        aria-labelledby={`${uid}-progress-label`}
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={stats.percent}
+        aria-valuetext={`전체 ${stats.total}개 중 ${stats.published}개 공개 (${stats.percent}%)`}
+      >
+        <div class="rm-progress__fill" style={`width: ${stats.percent}%`}></div>
+      </div>
+      <p class="rm-progress__note">
+        방문자 개인의 학습 진도가 아니라, 전체 {stats.total}개 강의 중 사이트에 공개된 강의의 비율입니다.
+        {stats.published === 0 && ' 첫 강의를 준비하고 있습니다.'}
+      </p>
+    </div>
+  </div>
+
+  <!-- 검색 · 필터 · 접기/펼치기 -->
+  <div class="rm-controls">
+    <div class="rm-search">
+      <label class="rm-sr-only" for={`${uid}-search`}>강의 제목 검색</label>
+      <svg class="rm-search__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="m20 20-3.5-3.5"></path>
+      </svg>
+      <input
+        id={`${uid}-search`}
+        type="search"
+        placeholder="강의 제목 검색 (예: 뉴턴, Spline)"
+        autocomplete="off"
+        spellcheck="false"
+        data-search
+      />
+    </div>
+
+    <div class="rm-filters" role="group" aria-label="난이도 필터">
+      <button type="button" class="rm-chip" data-filter="all" aria-pressed="true">전체</button>
+      {
+        LEVEL_ORDER.map((level) => (
+          <button type="button" class="rm-chip" data-filter={level} data-level={level} aria-pressed="false">
+            <span class="rm-dot" aria-hidden="true" />
+            {LEVELS[level].label}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="rm-toolbar">
+      <p class="rm-result" data-result aria-live="polite">전체 {stats.total}개 강의</p>
+      <div class="rm-toolbar__actions">
+        <button type="button" class="rm-text-btn" data-expand>전체 펼치기</button>
+        <span aria-hidden="true">·</span>
+        <button type="button" class="rm-text-btn" data-collapse>전체 접기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Part 목록 -->
+  <div class="rm-parts">
+    {
+      resolved.parts.map((part) => (
+        <details class="rm-part" data-part data-level={part.level} open={initiallyOpen.includes(part.number)}>
+          <summary class="rm-part__summary">
+            <span class="rm-part__heading">
+              <span class="rm-part__num">PART {part.numeral}</span>
+              <span class="rm-part__title">{part.title}</span>
+            </span>
+            <span class="rm-part__meta">
+              <span class="rm-level" data-level={part.level}>
+                {LEVELS[part.level].label}
+              </span>
+              <span class="rm-part__count">
+                {part.lectures.length}강 · 공개 {part.publishedCount}
+              </span>
+              <span class="rm-part__match" data-part-match hidden />
+            </span>
+            <svg class="rm-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </summary>
+
+          <ol class="rm-lectures">
+            {part.lectures.map((lecture) => {
+              const search = [lecture.title, lecture.en ?? '', ...lecture.keywords].join(' ');
+              const inner = (
+                <Fragment>
+                  <span class="rm-lecture__num">{pad(lecture.number)}</span>
+                  <span class="rm-lecture__text">
+                    <span class="rm-lecture__title">{lecture.title}</span>
+                    {lecture.en && <span class="rm-lecture__en">{lecture.en}</span>}
+                  </span>
+                  {lecture.level !== part.level && (
+                    <span class="rm-level rm-level--sm" data-level={lecture.level}>
+                      {LEVELS[lecture.level].label}
+                    </span>
+                  )}
+                  <span class:list={['rm-badge', `rm-badge--${lecture.status}`]}>
+                    {STATUSES[lecture.status].label}
+                  </span>
+                </Fragment>
+              );
+              return (
+                <li data-lecture data-level={lecture.level} data-search={search}>
+                  {lecture.isPublic ? (
+                    <a class="rm-lecture is-public" href={lecture.href}>
+                      {inner}
+                    </a>
+                  ) : (
+                    <div class="rm-lecture is-planned">{inner}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </details>
+      ))
+    }
+  </div>
+
+  <div class="rm-empty" data-empty hidden>
+    <p><strong>조건에 맞는 강의가 없습니다.</strong></p>
+    <p>다른 검색어를 입력하거나 난이도 필터를 ‘전체’로 바꿔 보세요.</p>
+    <button type="button" class="rm-text-btn" data-reset>검색·필터 초기화</button>
+  </div>
+</section>
+
+<script>
+  // 검색어 정규화: 대소문자·공백·하이픈·가운뎃점·괄호 차이를 무시 (예: '뉴턴랩슨' ↔ '뉴턴-랩슨')
+  const normalize = (text: string) =>
+    text
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/[\s\-‐–—_·・‧.,'’"()（）[\]]/g, '');
+
+  function initRoadmap(root: HTMLElement) {
+    const input = root.querySelector<HTMLInputElement>('[data-search]')!;
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+    const parts = [...root.querySelectorAll<HTMLDetailsElement>('[data-part]')];
+    const result = root.querySelector<HTMLElement>('[data-result]')!;
+    const empty = root.querySelector<HTMLElement>('[data-empty]')!;
+    const lectures = [...root.querySelectorAll<HTMLElement>('[data-lecture]')].map((el) => ({
+      el,
+      level: el.dataset.level ?? '',
+      text: normalize(el.dataset.search ?? ''),
+    }));
+    const total = lectures.length;
+
+    let level = 'all';
+    let savedOpen: boolean[] | null = null; // 검색 시작 전 펼침 상태 (검색어를 지우면 복원)
+
+    function apply() {
+      const query = normalize(input.value);
+      const filtering = query !== '' || level !== 'all';
+
+      if (query && !savedOpen) savedOpen = parts.map((p) => p.open);
+      if (!query && savedOpen) {
+        parts.forEach((p, i) => (p.open = savedOpen![i]));
+        savedOpen = null;
+      }
+
+      let visible = 0;
+      for (const part of parts) {
+        let matched = 0;
+        for (const li of part.querySelectorAll<HTMLElement>('[data-lecture]')) {
+          const item = lectures.find((l) => l.el === li)!;
+          const ok = (level === 'all' || item.level === level) && (!query || item.text.includes(query));
+          li.hidden = !ok;
+          if (ok) matched++;
+        }
+        part.hidden = matched === 0;
+        if (query && matched > 0) part.open = true;
+
+        const badge = part.querySelector<HTMLElement>('[data-part-match]')!;
+        badge.hidden = !filtering || matched === 0;
+        badge.textContent = `${matched}개 일치`;
+        visible += matched;
+      }
+
+      result.textContent = filtering ? `${total}개 강의 중 ${visible}개 표시` : `전체 ${total}개 강의`;
+      empty.hidden = visible > 0;
+    }
+
+    function setLevel(next: string) {
+      level = next;
+      chips.forEach((chip) => chip.setAttribute('aria-pressed', String(chip.dataset.filter === next)));
+      apply();
+    }
+
+    input.addEventListener('input', apply);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && input.value) {
+        input.value = '';
+        apply();
+      }
+    });
+    chips.forEach((chip) => chip.addEventListener('click', () => setLevel(chip.dataset.filter ?? 'all')));
+    root.querySelector('[data-expand]')!.addEventListener('click', () => {
+      parts.forEach((p) => !p.hidden && (p.open = true));
+    });
+    root.querySelector('[data-collapse]')!.addEventListener('click', () => {
+      parts.forEach((p) => (p.open = false));
+    });
+    root.querySelector('[data-reset]')!.addEventListener('click', () => {
+      input.value = '';
+      setLevel('all');
+      input.focus();
+    });
+
+    // 뒤로 가기 등으로 입력값이 복원된 경우 반영
+    if (input.value) apply();
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-roadmap]').forEach(initRoadmap);
+</script>
+
+<style>
+  /* ── 난이도 색상 (기본: 다크 모드, 라이트 모드에서 재정의) ── */
+  .roadmap {
+    --rm-basic: #4ade80;
+    --rm-intermediate: #60a5fa;
+    --rm-advanced: #c084fc;
+    --rm-expert: #fb923c;
+    --rm-research: #f472b6;
+    --rm-radius: 14px;
+    --rm-border: var(--sl-color-gray-5);
+    --rm-surface: var(--sl-color-bg);
+    --rm-surface-2: var(--sl-color-bg-nav);
+    --rm-muted: var(--sl-color-gray-3);
+    interpolate-size: allow-keywords;
+    margin-top: 1.5rem;
+    color: var(--sl-color-text);
+  }
+  :global(:root[data-theme='light']) .roadmap {
+    --rm-basic: #15803d;
+    --rm-intermediate: #1d4ed8;
+    --rm-advanced: #7e22ce;
+    --rm-expert: #c2410c;
+    --rm-research: #be185d;
+    --rm-surface-2: var(--sl-color-gray-7);
+  }
+  [data-level='basic'] { --rm-c: var(--rm-basic); }
+  [data-level='intermediate'] { --rm-c: var(--rm-intermediate); }
+  [data-level='advanced'] { --rm-c: var(--rm-advanced); }
+  [data-level='expert'] { --rm-c: var(--rm-expert); }
+  [data-level='research'] { --rm-c: var(--rm-research); }
+
+  .roadmap [hidden] {
+    display: none !important;
+  }
+  .rm-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* ── 공개 현황 ── */
+  .rm-status {
+    padding: 1.5rem;
+    border: 1px solid var(--rm-border);
+    border-radius: var(--rm-radius);
+    background: var(--rm-surface-2);
+  }
+  .rm-status__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .rm-status__title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .rm-status__hint {
+    font-size: 0.8rem;
+    color: var(--rm-muted);
+  }
+  .rm-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0 0 1.25rem;
+  }
+  .rm-stat {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--rm-border);
+    border-radius: 10px;
+    background: var(--rm-surface);
+  }
+  .rm-stat dt {
+    font-size: 0.8rem;
+    color: var(--rm-muted);
+  }
+  .rm-stat dd {
+    margin: 0.2rem 0 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    color: var(--sl-color-white);
+  }
+  .rm-stat dd span {
+    margin-left: 0.15rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--rm-muted);
+  }
+  .rm-progress__label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.45rem;
+    font-size: 0.9rem;
+  }
+  .rm-progress__label strong {
+    font-variant-numeric: tabular-nums;
+    color: var(--sl-color-white);
+  }
+  .rm-progress__track {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--sl-color-gray-6);
+    box-shadow: inset 0 0 0 1px var(--rm-border);
+    overflow: hidden;
+  }
+  .rm-progress__fill {
+    height: 100%;
+    min-width: 0;
+    border-radius: inherit;
+    background: var(--sl-color-accent);
+    transition: width 0.4s ease;
+  }
+  .rm-progress__note {
+    margin: 0.6rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--rm-muted);
+    word-break: keep-all;
+  }
+
+  /* ── 검색 · 필터 ── */
+  .rm-controls {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1.5rem 0 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--rm-border);
+    border-radius: var(--rm-radius);
+    background: var(--sl-color-bg);
+  }
+  .rm-search {
+    position: relative;
+  }
+  .rm-search__icon {
+    position: absolute;
+    top: 50%;
+    left: 0.85rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    transform: translateY(-50%);
+    fill: none;
+    stroke: var(--rm-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+  .rm-search input {
+    width: 100%;
+    padding: 0.65rem 0.9rem 0.65rem 2.5rem;
+    border: 1px solid var(--rm-border);
+    border-radius: 10px;
+    background: var(--rm-surface);
+    color: var(--sl-color-text);
+    font: inherit;
+    font-size: 0.95rem;
+  }
+  .rm-search input::placeholder {
+    color: var(--rm-muted);
+  }
+  .rm-search input:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
+    border-color: transparent;
+  }
+  .rm-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .rm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--rm-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .rm-chip:hover {
+    border-color: var(--sl-color-gray-3);
+    color: var(--sl-color-white);
+  }
+  .rm-chip[aria-pressed='true'] {
+    border-color: var(--sl-color-text-accent);
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-white);
+    font-weight: 600;
+  }
+  .rm-chip:focus-visible,
+  .rm-text-btn:focus-visible,
+  .rm-part__summary:focus-visible,
+  .rm-lecture.is-public:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+  .rm-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--rm-c);
+  }
+  .rm-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    font-size: 0.85rem;
+  }
+  .rm-result {
+    margin: 0;
+    color: var(--rm-muted);
+  }
+  .rm-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--rm-muted);
+  }
+  .rm-text-btn {
+    padding: 0.15rem 0.1rem;
+    border: 0;
+    background: none;
+    color: var(--sl-color-text-accent);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .rm-text-btn:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Part 아코디언 ── */
+  .rm-parts {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .rm-part {
+    border: 1px solid var(--rm-border);
+    border-left: 4px solid var(--rm-c);
+    border-radius: var(--rm-radius);
+    background: var(--rm-surface);
+    overflow: hidden;
+  }
+  .rm-part__summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  .rm-part__summary::-webkit-details-marker {
+    display: none;
+  }
+  .rm-part__summary:hover {
+    background: var(--rm-surface-2);
+  }
+  .rm-part__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .rm-part__num {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--rm-c);
+  }
+  .rm-part__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+    word-break: keep-all;
+  }
+  .rm-part__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--rm-muted);
+  }
+  .rm-part__count {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .rm-part__match {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-white);
+    white-space: nowrap;
+  }
+  .rm-chevron {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: var(--rm-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.25s ease;
+  }
+  .rm-part[open] .rm-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* 부드러운 펼치기 (지원 브라우저에서만, 미지원 시 즉시 열림) */
+  @supports selector(::details-content) {
+    .rm-part::details-content {
+      block-size: 0;
+      overflow: hidden;
+      transition:
+        block-size 0.28s ease,
+        content-visibility 0.28s allow-discrete;
+    }
+    .rm-part[open]::details-content {
+      block-size: auto;
+    }
+  }
+
+  .rm-level {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.12rem 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rm-c) 16%, transparent);
+    color: var(--rm-c);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .rm-level--sm {
+    font-size: 0.7rem;
+  }
+
+  /* ── 강의 목록 ── */
+  .rm-lectures {
+    margin: 0;
+    padding: 0 0.5rem 0.5rem;
+    list-style: none;
+    border-top: 1px solid var(--rm-border);
+  }
+  .rm-lectures li + li {
+    border-top: 1px dashed var(--sl-color-gray-6);
+  }
+  .rm-lecture {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.75rem;
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .rm-lecture__num {
+    font-family: var(--sl-font-mono);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--rm-muted);
+  }
+  .rm-lecture__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .rm-lecture__title {
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--sl-color-white);
+    word-break: keep-all;
+  }
+  .rm-lecture__en {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--rm-muted);
+  }
+  .rm-badge {
+    padding: 0.12rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .rm-badge--published {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+  }
+  .rm-badge--planned {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-3);
+  }
+
+  /* 공개 강의: 클릭 가능 */
+  .rm-lecture.is-public {
+    transition: background-color 0.15s;
+  }
+  .rm-lecture.is-public:hover {
+    background: var(--rm-surface-2);
+  }
+  .rm-lecture.is-public:hover .rm-lecture__title {
+    color: var(--sl-color-text-accent);
+  }
+
+  /* 준비 중 강의: 회색, 클릭 불가 */
+  .rm-lecture.is-planned {
+    cursor: default;
+  }
+  .rm-lecture.is-planned .rm-lecture__title {
+    color: var(--sl-color-gray-3);
+  }
+  .rm-lecture.is-planned .rm-lecture__num,
+  .rm-lecture.is-planned .rm-lecture__en {
+    color: var(--sl-color-gray-4);
+  }
+
+  /* ── 결과 없음 ── */
+  .rm-empty {
+    padding: 2rem 1rem;
+    border: 1px dashed var(--rm-border);
+    border-radius: var(--rm-radius);
+    text-align: center;
+    color: var(--rm-muted);
+  }
+  .rm-empty p {
+    margin: 0 0 0.4rem;
+  }
+  .rm-empty strong {
+    color: var(--sl-color-white);
+  }
+
+  /* ── 반응형 ── */
+  @media (max-width: 600px) {
+    .rm-status {
+      padding: 1rem;
+    }
+    .rm-stats {
+      gap: 0.5rem;
+    }
+    .rm-stat {
+      padding: 0.6rem 0.7rem;
+    }
+    .rm-stat dt {
+      font-size: 0.72rem;
+    }
+    .rm-stat dd {
+      font-size: 1.3rem;
+    }
+    .rm-part__summary {
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding: 0.9rem 1rem;
+    }
+    .rm-part__meta {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: flex-start;
+    }
+    .rm-chevron {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .rm-lecture {
+      grid-template-columns: 1.9rem minmax(0, 1fr) auto;
+      gap: 0.5rem;
+      padding: 0.65rem 0.4rem;
+    }
+    .rm-lecture .rm-level--sm {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .roadmap *,
+    .rm-part::details-content {
+      transition: none !important;
+    }
+  }
+</style>

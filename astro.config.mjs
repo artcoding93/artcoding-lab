@@ -3,8 +3,15 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { satteri } from '@astrojs/markdown-satteri';
 import { satteriKatex } from './src/plugins/satteri-katex.mjs';
+import { roadmapSidebar } from './src/lib/roadmap.ts';
+import { numericalRoadmap } from './src/data/numerical-roadmap.ts';
 
 export default defineConfig({
+  // 이동한 페이지의 이전 URL → 새 URL (외부 링크·북마크 보존)
+  redirects: {
+    '/numerical/bisection': '/numerical/root-finding/bisection/',
+    '/numerical/newton-raphson': '/numerical/root-finding/newton-raphson/',
+  },
   // LaTeX 수식 렌더링: $...$ (인라인), $$...$$ (블록) → KaTeX (.md / .mdx 공통)
   markdown: {
     processor: satteri({
@@ -29,14 +36,8 @@ export default defineConfig({
         },
       },
       sidebar: [
-        {
-          label: '수치해석',
-          items: [
-            { label: '수치해석 소개', slug: 'numerical' },
-            { label: '이분법', slug: 'numerical/bisection' },
-            { label: '뉴턴-랩슨', slug: 'numerical/newton-raphson' },
-          ],
-        },
+        // 수치해석: 로드맵 + 공개된 강의만 자동 표시 (src/data/numerical-roadmap.ts 기준)
+        roadmapSidebar(numericalRoadmap, { label: '수치해석', overviewLabel: '수치해석 로드맵' }),
         {
           label: '유한요소법 (FEM)',
           items: [

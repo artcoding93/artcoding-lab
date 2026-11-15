@@ -59,13 +59,16 @@ npm run preview   # 빌드 결과 미리보기
 ## 3. 프로젝트 구조
 
 ```
-astro.config.mjs          # Markdown 처리기(Sätteri+KaTeX), Starlight 설정, 사이드바(수동 관리), customCss
+astro.config.mjs          # Markdown 처리기(Sätteri+KaTeX), Starlight 설정, 사이드바, customCss
 src/
   content.config.ts       # docs 컬렉션 (docsLoader + docsSchema)
   plugins/satteri-katex.mjs  # 수식 렌더링 플러그인
+  lib/roadmap.ts          # 로드맵 공통 모델: 난이도·상태 정의, 공개 검증, 사이드바 생성
+  data/numerical-roadmap.ts  # 수치해석 12 Part · 80강 목차 (강의 공개 상태의 기준)
+  components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
   content/docs/
     index.mdx             # 홈 (template: splash, 학습 분야 카드)
-    numerical/            # /numerical/ 수치해석 (index, bisection, newton-raphson)
+    numerical/            # index.mdx = 로드맵, root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
     fem/                  # /fem/ 유한요소법 (index)
     quantum/              # /quantum/ 양자컴퓨팅 (index)
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
@@ -89,8 +92,22 @@ public/                   # 정적 파일 (favicon.svg)
 
 ### 사이드바
 
-사이드바는 `astro.config.mjs`의 `sidebar`에 **직접 등록**한다(autogenerate 미사용).
-새 페이지를 추가하면 반드시 해당 분야 `items`에 `{ label, slug }`를 추가하고, 링크 경로를 확인한다.
+- **수치해석**: `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
+- FEM·양자컴퓨팅: 아직 `astro.config.mjs`의 `sidebar`에 직접 등록한다. 로드맵을 만들면 수치해석과 같은 방식으로 바꾼다.
+
+### 로드맵 강의 공개 절차 (수치해석)
+
+강의 목록과 공개 상태의 기준은 `src/data/numerical-roadmap.ts`이다. 번호는 배열 순서로 자동 계산되고, URL은 `slug`로 고정된다.
+
+1. 해당 강의의 `slug`를 확인한다. 공개 후에는 slug를 바꾸지 않는다. 제목과 순서는 바꿔도 URL에 영향이 없다.
+2. `src/content/docs/numerical/<slug>.mdx`에 강의를 작성한다(4절 표준 구성).
+3. 강의가 완성되면 데이터에 `status: 'published'`를 추가한다. 임시 안내문이나 빈 템플릿은 공개하지 않는다.
+4. `npm run build`로 확인한다. 로드맵 링크, 진행률, 사이드바는 자동으로 반영된다.
+   - 페이지가 없거나 `draft: true`인데 `published`로 표시하면 **빌드가 실패한다**.
+   - 본문이 800자 미만이면 임시 안내문으로 의심하는 경고가 나온다.
+- 새 강의를 추가할 때는 원하는 위치에 `{ id, title, en, slug }`를 넣는다. `id`와 `slug`는 중복될 수 없다(빌드 시 검사).
+- 페이지를 옮길 때는 `git mv`로 파일을 이동하고, 데이터의 `slug`를 수정하고, `astro.config.mjs`의 `redirects`에 이전 URL → 새 URL을 추가한다. 예: `/numerical/bisection` → `/numerical/root-finding/bisection/`
+- 새 상태(예: draft)는 `src/lib/roadmap.ts`의 `STATUSES`에 추가한다.
 
 ### 알려진 사항 (임의로 고치지 않음)
 

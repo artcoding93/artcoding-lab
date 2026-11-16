@@ -1,0 +1,272 @@
+---
+// 연구 로드맵: Stage 타임라인 (주제 · 핵심 질문 · 결과물 · 연결 논문/알고리즘/실험이 데이터에서 자동으로 모인다)
+import { PAPER_STATUSES, ALGORITHM_STATUSES, EXPERIMENT_STATUSES, STAGE_STATUSES, type ResearchDef } from '../../lib/research';
+import { loadResearch } from './load-research';
+import './research.css';
+
+interface Props {
+  research: ResearchDef;
+  /** 일부 Stage만 표시 (예: Frontier 페이지의 Stage 8·9) */
+  stageIds?: string[];
+}
+
+const { research, stageIds } = Astro.props;
+const r = await loadResearch(research);
+const base = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${r.basePath}`;
+const stages = stageIds ? r.stages.filter((s) => stageIds.includes(s.id)) : r.stages;
+const algorithmOf = new Map(r.algorithms.map((a) => [a.id, a]));
+const experimentOf = new Map(r.experiments.map((x) => [x.id, x]));
+---
+
+<ol class="rs rs-stages not-content">
+  {stages.map((s) => (
+    <li class="rs-stage" id={`stage-${s.id}`} data-open-ended={s.openEnded ? '' : undefined}>
+      <span class="rs-stage__marker" aria-hidden="true">{s.number}</span>
+      <article class:list={['rs-card', s.openEnded && 'rs-card--dashed']}>
+        <header class="rs-stage__head">
+          <div>
+            <p class="rs-stage__eyebrow">STAGE {s.number} · {s.era}</p>
+            <h3 class="rs-stage__title">{s.title}</h3>
+            <p class="rs-stage__ko">{s.ko}</p>
+          </div>
+          <div class="rs-stage__badges">
+            <span class="rs-badge" data-s={s.status}>{STAGE_STATUSES[s.status].label}</span>
+            {s.openEnded && <span class="rs-tag">주제 탐색 · 미확정</span>}
+          </div>
+        </header>
+
+        <p class="rs-stage__question"><span class="rs-label">핵심 질문</span>{s.question}</p>
+
+        <div class="rs-stage__grid">
+          <div>
+            <span class="rs-label">{s.openEnded ? '탐색 후보 주제' : '주제'}</span>
+            <ul class="rs-chips">
+              {s.topics.map((t) => <li class="rs-tag">{t}</li>)}
+            </ul>
+            {s.comparisonTopics && (
+              <>
+                <span class="rs-label rs-stage__sub">비교 연구</span>
+                <ul class="rs-chips">
+                  {s.comparisonTopics.map((t) => <li class="rs-tag rs-tag--cmp">{t}</li>)}
+                </ul>
+              </>
+            )}
+          </div>
+          <div>
+            <span class="rs-label">계획된 결과물</span>
+            <ul class="rs-stage__deliverables">
+              {s.deliverables.map((d) => <li>{d}</li>)}
+            </ul>
+          </div>
+        </div>
+
+        {s.note && <p class="rs-stage__note">{s.note}</p>}
+
+        <div class="rs-stage__links">
+          <div>
+            <span class="rs-label">핵심 논문 ({s.paperIds.length})</span>
+            {s.paperIds.length ? (
+              <ul class="rs-list">
+                {s.paperIds.map((id) => {
+                  const p = r.paper.get(id)!;
+                  return (
+                    <li>
+                      <a href={`${base}/papers/#paper-${id}`}>{r.paper.get(id)!.cite}</a>
+                      <span class="rs-muted rs-stage__ptitle">{p.title}</span>
+                      <span class="rs-badge" data-s={p.status}>{PAPER_STATUSES[p.status].label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p class="rs-muted rs-stage__none">{s.openEnded ? '연구 진행에 따라 논문을 조사·선정합니다.' : '아직 등록된 논문이 없습니다.'}</p>
+            )}
+          </div>
+          <div>
+            <span class="rs-label">재현 · 실험</span>
+            {s.algorithmIds.length || s.experimentIds.length ? (
+              <ul class="rs-list">
+                {s.algorithmIds.map((id) => {
+                  const a = algorithmOf.get(id)!;
+                  return <li><a href={`${base}/algorithms/#alg-${id}`}>{a.name}</a><span class="rs-badge" data-s={a.status}>{ALGORITHM_STATUSES[a.status].label}</span></li>;
+                })}
+                {s.experimentIds.map((id) => {
+                  const x = experimentOf.get(id)!;
+                  return <li><a href={`${base}/experiments/#exp-${id}`}>실험: {x.title}</a><span class="rs-badge" data-s={x.status}>{EXPERIMENT_STATUSES[x.status].label}</span></li>;
+                })}
+              </ul>
+            ) : (
+              <p class="rs-muted rs-stage__none">연구 방향이 정해지면 재현·실험 항목을 추가합니다.</p>
+            )}
+          </div>
+        </div>
+      </article>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .rs-stages {
+    position: relative;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rs-stages::before {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 1.05rem;
+    width: 2px;
+    background: var(--rs-border);
+  }
+  .rs-stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.1rem minmax(0, 1fr);
+    gap: 1rem;
+    scroll-margin-top: calc(var(--sl-nav-height, 3.5rem) + 1rem);
+  }
+  .rs-stage + .rs-stage {
+    margin-top: 1.25rem;
+  }
+  .rs-stage__marker {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    margin-top: 1rem;
+    border: 2px solid var(--rs-accent);
+    border-radius: 50%;
+    background: var(--sl-color-bg);
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  [data-open-ended] .rs-stage__marker {
+    border-style: dashed;
+  }
+  .rs-stage__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .rs-stage__eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--rs-accent);
+  }
+  .rs-stage__title {
+    margin: 0.15rem 0 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .rs-stage__ko {
+    margin: 0.1rem 0 0;
+    font-size: 0.88rem;
+    color: var(--rs-muted);
+  }
+  .rs-stage__badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+  }
+  .rs-stage__question {
+    margin: 0.85rem 0 0;
+    padding: 0.65rem 0.85rem;
+    border-left: 3px solid var(--rs-accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--rs-surface);
+    font-size: 0.93rem;
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+  .rs-stage__grid,
+  .rs-stage__links {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 1rem 1.5rem;
+    margin-top: 1rem;
+  }
+  .rs-stage__sub {
+    margin-top: 0.6rem;
+  }
+  .rs-tag--cmp {
+    border: 1px dashed var(--rs-border);
+    background: transparent;
+  }
+  .rs-stage__deliverables {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+  .rs-stage__note {
+    margin: 0.85rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.6;
+    color: var(--rs-muted);
+    word-break: keep-all;
+  }
+  .rs-stage__links {
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--rs-border);
+  }
+  .rs-stage__links li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2rem 0.5rem;
+    padding: 0.2rem 0;
+    font-size: 0.86rem;
+  }
+  .rs-stage__links a {
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .rs-stage__links a:hover {
+    text-decoration: underline;
+  }
+  .rs-stage__ptitle {
+    flex-basis: 100%;
+    order: 3;
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+  .rs-stage__none {
+    margin: 0;
+    font-size: 0.84rem;
+  }
+  @media (max-width: 600px) {
+    .rs-stages::before {
+      left: 0.8rem;
+    }
+    .rs-stage {
+      grid-template-columns: 1.6rem minmax(0, 1fr);
+      gap: 0.6rem;
+    }
+    .rs-stage__marker {
+      width: 1.6rem;
+      height: 1.6rem;
+      font-size: 0.8rem;
+    }
+    .rs-stage__head {
+      flex-direction: column;
+    }
+    .rs-stage__badges {
+      flex-direction: row;
+      align-items: center;
+    }
+    .rs-stage__grid,
+    .rs-stage__links {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,128 @@
+/* Mesh Generation Research Lab 공통 스타일 — 모든 클래스는 .rs- 접두사 (다른 페이지에 영향 없음) */
+.rs {
+  --rs-accent: #0e7490;
+  --rs-border: var(--sl-color-gray-5);
+  --rs-muted: var(--sl-color-gray-3);
+  --rs-surface: var(--sl-color-gray-7);
+  --rs-s-candidate: var(--sl-color-gray-3);
+  --rs-s-selected: #2563eb;
+  --rs-s-progress: #b45309;
+  --rs-s-done: #15803d;
+  color: var(--sl-color-text);
+}
+:root[data-theme='dark'] .rs {
+  --rs-accent: #22d3ee;
+  --rs-surface: var(--sl-color-bg-nav);
+  --rs-s-selected: #60a5fa;
+  --rs-s-progress: #fbbf24;
+  --rs-s-done: #4ade80;
+}
+.rs [data-s='candidate'], .rs [data-s='planned'] { --rs-c: var(--rs-s-candidate); }
+.rs [data-s='selected'], .rs [data-s='exploring'] { --rs-c: var(--rs-s-selected); }
+.rs [data-s='reviewing'], .rs [data-s='in-progress'], .rs [data-s='running'], .rs [data-s='active'] { --rs-c: var(--rs-s-progress); }
+.rs [data-s='reviewed'], .rs [data-s='reproduced'], .rs [data-s='validated'], .rs [data-s='completed'] { --rs-c: var(--rs-s-done); }
+
+.rs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--rs-c, var(--rs-muted)) 50%, transparent);
+  border-radius: 999px;
+  color: var(--rs-c, var(--rs-muted));
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.rs-badge::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--rs-c, var(--rs-muted));
+}
+.rs-badge[data-s='candidate']::before,
+.rs-badge[data-s='planned']::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--rs-c);
+}
+.rs-tag {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
+  background: var(--rs-surface);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.rs-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--rs-muted);
+}
+.rs-card {
+  min-width: 0;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--rs-border);
+  border-radius: 14px;
+  background: var(--sl-color-bg);
+  scroll-margin-top: calc(var(--sl-nav-height, 3.5rem) + 1rem);
+}
+.rs-card--dashed {
+  border-style: dashed;
+  background: transparent;
+}
+.rs-card:target {
+  border-color: var(--rs-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rs-accent) 35%, transparent);
+}
+.rs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs a {
+  color: var(--sl-color-text-accent);
+}
+.rs-muted {
+  color: var(--rs-muted);
+}
+.rs-empty {
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--rs-border);
+  border-radius: 12px;
+  color: var(--rs-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+@media (max-width: 600px) {
+  .rs-grid {
+    grid-template-columns: 1fr;
+  }
+  .rs-card {
+    padding: 0.9rem;
+  }
+}
+.rs [hidden] {
+  display: none !important;
+}

@@ -11,7 +11,7 @@
 - **슬로건**: 공학을 코드로 이해하다
 - **목적**: 수학적·공학적 이론을 코드로 구현하고, 시각화와 인터랙티브 실습으로 학습하는 교육 플랫폼
 - **대상**: 컴퓨터공학·공학계열 대학생, 관련 분야 입문자
-- **학습 분야**: 수치해석(Numerical Methods), 유한요소법(Finite Element Method, FEM), 양자컴퓨팅(Quantum Computing), 광학 계측과 계산 영상(Optical Metrology & Computational Imaging)
+- **학습 분야**: 수치해석(Numerical Methods), 유한요소법(Finite Element Method, FEM), 양자컴퓨팅(Quantum Computing), 광학 계측과 계산 영상(Optical Metrology & Computational Imaging), 메시 생성 알고리즘 연구(Mesh Generation Research Lab, 논문 기반 연구 플랫폼)
 
 단순한 기술 블로그가 아니다. **이론과 구현을 한 페이지에서 함께 학습**하는 교육 플랫폼을 지향한다.
 
@@ -72,6 +72,11 @@ src/
   data/quantum-simulator-project.ts  # Quantum Simulator Project Phase 1–6, 강의 연결, 예정 컴포넌트
   data/optical-roadmap.ts # 광학 계측 8 Part · 56강 목차
   data/optical-simulator-project.ts  # Optical Metrology Simulator Project Phase 1–7, 강의 연결, 예정 컴포넌트
+  lib/research.ts         # 연구 플랫폼 공통 모델: Stage·논문·알고리즘·실험·노트, 상태 검증, 연구 사이드바
+  data/mesh-*.ts          # 메시 생성 연구: roadmap(Stage·분야), papers(논문·검증 대기), algorithms(재현·Explorer),
+                          #   experiments(형상·지표·실험), research-notes(노트), mesh-research.ts(통합)
+  components/research/    # ResearchOverview, ResearchRoadmap, PaperLibrary·PaperCard·PaperSelection,
+                          #   AlgorithmReproduction, ExperimentPlan, ResearchNotebook, research.css(.rs- 접두사), load-research.ts
   components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
   components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
   content/docs/
@@ -80,6 +85,7 @@ src/
     fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project
     quantum/              # index.mdx = 양자컴퓨팅 로드맵, simulator-project/index.mdx = Quantum Simulator Project
     optical/              # index.mdx = 광학 계측 로드맵, simulator-project/index.mdx = Optical Metrology Simulator Project
+    mesh-generation/      # index(메인), roadmap, papers/(목록·리뷰), algorithms/, experiments/(목록·보고서), notebook/(목록·노트), frontier
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
@@ -95,14 +101,15 @@ public/                   # 정적 파일 (favicon.svg)
 | 전체 실행 Python 코드 (다운로드용) | `public/code/<분야>/<주제>.py` | `public/code/numerical/bisection.py` |
 | 강의 이미지 | `src/assets/<분야>/` | `src/assets/fem/mesh-1d.png` |
 
-- 분야 디렉터리: `numerical`, `fem`, `quantum`, `optical`
+- 분야 디렉터리: `numerical`, `fem`, `quantum`, `optical`, `mesh-generation`
 - 파일명은 **영문 소문자와 하이픈**을 사용한다(kebab-case). 컴포넌트 파일만 PascalCase를 허용한다.
 - 인터랙티브 컴포넌트를 쓰는 페이지는 `.mdx`로 작성한다.
 
 ### 사이드바
 
-- 네 분야 모두 `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
+- 강의형 네 분야는 `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
 - 프로젝트 페이지는 `extraItems`로 넣는다: FEM은 'FEM Solver Project', 양자컴퓨팅은 'Quantum Simulator Project', 광학 계측은 'Optical Metrology Simulator Project'.
+- 메시 생성 연구는 `researchSidebar()`가 고정 메뉴 7개와 리뷰 페이지가 있는 논문·연구 노트만 자동으로 넣는다.
 
 ### 로드맵 강의 공개 절차 (네 분야 공통)
 
@@ -141,6 +148,24 @@ public/                   # 정적 파일 (favicon.svg)
   - 광학: OpticalLayerViewer, ReflectanceSpectrumViewer, EllipsometryExplorer, InterferogramViewer, PhaseUnwrappingViewer, ConfocalResponseViewer, OCTScanViewer, HologramViewer, ParameterFittingExplorer, MeasurementErrorAnalyzer
 - 전체 코드는 `public/code/<분야>/` 아래에 둔다(다운로드 가능). 페이지에는 핵심 코드만 싣는다.
 - 양자 시뮬레이터 범위: 1~3큐비트 상태벡터, X·Y·Z·H·S·T·Rx·Ry·Rz·CNOT, 측정 확률·Shots, 블로흐 구면. 노이즈·오류 정정·하드웨어 시뮬레이션은 초기 범위에서 제외한다. 브라우저 JS 엔진은 Python 엔진과 같은 입력에 같은 결과(확률)를 내야 한다.
+
+### Mesh Generation Research Lab 운영 절차
+
+강의형 분야와 달리 **논문 기반 장기 연구 프로젝트**이다. 데이터는 `src/data/mesh-*.ts`, 검증 규칙은 `src/lib/research.ts`에 있다.
+
+- **논문 등록**: 제목·저자·연도·학술지·DOI를 Crossref 등 공식 메타데이터로 확인한 뒤 `mesh-papers.ts`에 추가하고 `verification`(출처, 확인일, 비고)을 남긴다. 확인되지 않으면 `pendingPapers`에 둔다. **서지정보를 추측해서 쓰지 않는다.**
+- `contributions`는 리뷰 전에는 '널리 알려진 기여 요약'이다. 리뷰 후 원문 기준으로 고친다. `predecessors`는 연구 흐름상 계보이고 후속 연구는 자동 계산된다.
+- **논문 상태**: candidate → selected → reviewing → reviewed → reproduced → validated. 빌드 검사 조건은 다음과 같다.
+  - reviewed 이상: `review` 페이지(`mesh-generation/papers/<id>.mdx`)가 있어야 한다.
+  - reproduced: 연결된 알고리즘이 reproduced이고, 그 알고리즘의 `code` 파일(`public/code/mesh-generation/`)이 있어야 한다.
+  - validated: 그 알고리즘을 포함한 실험이 completed이고 `report` 페이지가 있어야 한다.
+- **리뷰 페이지 구성(13항목)**: 논문 정보 → 역사적 배경 → 기존 한계 → 핵심 기여(왜 혁신적이었나) → 원리 → 수학적 정의 → 의사코드 → 인터랙티브 시각화 → Python 재현 → 실험 결과 → 장단점 → 후속 연구 → 새 연구 아이디어. 논문 그림·표는 복제하지 않고 새로 그린다. 원 논문 재현과 단순화 구현을 구분한다.
+- **재현**: 핵심 계산을 직접 구현한다. 외부 메시 라이브러리는 검증·비교용으로만 쓴다. NumPy·SciPy·Matplotlib·pytest로 시작하고, 프로파일링으로 확인된 병목만 최적화한다.
+- **실험**: `mesh-experiments.ts`의 공통 형상·지표를 사용한다. 실행하지 않은 실험의 수치를 만들지 않는다.
+- **연구 노트**: `notebook/<id>.mdx`를 작성하고 `mesh-research-notes.ts`에 등록한다. 빈 노트를 만들지 않는다.
+- **Stage 8·9**: 고정 목록이 아니다. 조사 → 원 논문 확인 → 분석 → 고전 알고리즘과 비교 → 가치·구현 가능성 검토 → **사용자와 방향 논의** → 대상 확정 → 노트·로드맵 갱신 순서로 진행한다. AI가 더 우수하다고 가정하지 않는다.
+- 범위 밖: 상용 메시 소프트웨어의 내부 알고리즘·제품 비교·채택 기술 조사.
+- Interactive Explorer 5종(DelaunayExplorer 등)은 계획만 있다. 구현하면 `src/components/mesh/`에 만들고 status를 올린다.
 
 ### 알려진 사항 (임의로 고치지 않음)
 
@@ -272,9 +297,9 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 
 ## 7. 디자인 원칙
 
-- 현재 홈페이지 디자인(`index.mdx`, `custom.css`의 카드 레이아웃)을 유지한다. 학습 분야 카드는 데스크톱·태블릿 2열(2×2), 모바일 1열이다.
+- 현재 홈페이지 디자인(`index.mdx`, `custom.css`의 카드 레이아웃)을 유지한다. 학습 분야 카드는 데스크톱·태블릿 2열(강의 4개 2×2 + 연구 카드 전체 폭 `learning-card--wide`), 모바일 1열이다.
 - 간결하고 현대적인 교육 플랫폼 디자인을 지향하며, 수식과 코드의 가독성을 우선한다.
-- 분야별 색상을 일관되게 사용한다: 수치해석 `#2563eb`(파랑), FEM `#9333ea`(보라), 양자컴퓨팅 `#16a34a`(초록), 광학 계측 `#ea580c`(주황)
+- 분야별 색상을 일관되게 사용한다: 수치해석 `#2563eb`(파랑), FEM `#9333ea`(보라), 양자컴퓨팅 `#16a34a`(초록), 광학 계측 `#ea580c`(주황), 메시 생성 연구 `#0891b2`(청록)
 - 색상, 테두리, 배경은 가능한 한 Starlight CSS 변수(`--sl-color-*`)를 사용해 **다크 모드와 호환**되게 한다.
 - PC, 태블릿(≤900px), 모바일(≤600px)에서 모두 확인한다. 기존 브레이크포인트를 따른다.
 - 컴포넌트 전용 스타일은 컴포넌트 안의 scoped `<style>`에 둔다. `custom.css`는 전역에 영향을 주므로, 수정하기 전에 다른 페이지(특히 홈)에 미치는 영향을 검토한다.

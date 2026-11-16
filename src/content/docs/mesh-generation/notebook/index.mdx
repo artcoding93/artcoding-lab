@@ -1,0 +1,31 @@
+---
+title: Research Notebook
+description: 기존 알고리즘의 한계, 실패 사례, 개선 아이디어, 연구 가설을 축적하는 연구 노트
+---
+
+import ResearchNotebook from '../../../../components/research/ResearchNotebook.astro';
+import { meshResearch } from '../../../../data/mesh-research';
+
+연구 노트는 논문 리뷰와 별도로 운영합니다. 리뷰와 재현 과정에서 발견한 한계와 아이디어를 기록하고, 노트끼리 연결해 **새로운 알고리즘 연구(Stage 9)의 근거**로 축적합니다.
+
+## 노트 유형
+
+<ResearchNotebook research={meshResearch} show="types" />
+
+## 노트 작성 항목
+
+| 항목 | 내용 |
+|---|---|
+| 작성일 | YYYY-MM-DD |
+| 관련 논문·알고리즘 | Paper Library와 Algorithm Reproduction의 ID로 연결 |
+| 문제 정의 | 무엇을 확인하려 하는가 |
+| 관찰 내용 | 실제로 본 현상 (재현 코드·실험에서 얻은 것) |
+| 연구 가설 | 검증 가능한 형태의 주장 |
+| 실험 계획 | 형상, 지표, 비교 대상 |
+| 결과 | 실행한 실험의 실제 결과 |
+| 한계 | 결과를 일반화할 수 없는 조건 |
+| 다음 연구 과제 | 이어서 할 일, 관련 노트 |
+
+## 노트 목록
+
+<ResearchNotebook research={meshResearch} show="notes" />

@@ -1,0 +1,15 @@
+---
+title: 연구 로드맵
+description: 삼각분할의 기초부터 AI 기반 메시 생성과 새로운 알고리즘 연구까지, 메시 생성 연구의 9개 Stage
+tableOfContents: false
+---
+
+import ResearchRoadmap from '../../../components/research/ResearchRoadmap.astro';
+import { meshResearch } from '../../../data/mesh-research';
+
+메시 생성 알고리즘이 발전해 온 흐름을 9개 Stage로 나눈 연구 로드맵입니다. 강의 목록과 달리 **Stage별 세부 항목 수를 미리 정하지 않습니다.** 논문을 검토하고 연구가 진행됨에 따라 논문·재현 알고리즘·실험이 추가되며, 각 Stage에 자동으로 모입니다.
+
+- Stage 1–7은 고전·핵심 논문을 재현하며 기술 발전의 흐름을 따라갑니다.
+- Stage 8(AI 기반 메시 생성)과 Stage 9(새로운 알고리즘 연구)는 **주제가 확정되지 않은 탐색 단계**입니다. 운영 방식은 [Frontier](/mesh-generation/frontier/)를 참고하세요.
+
+<ResearchRoadmap research={meshResearch} />

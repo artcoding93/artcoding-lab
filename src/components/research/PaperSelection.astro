@@ -1,0 +1,23 @@
+---
+// 지정한 논문만 카드로 표시 (예: Frontier 페이지의 서베이)
+import type { ResearchDef } from '../../lib/research';
+import { loadResearch } from './load-research';
+import PaperCard from './PaperCard.astro';
+import './research.css';
+
+interface Props {
+  research: ResearchDef;
+  paperIds: string[];
+}
+
+const r = await loadResearch(Astro.props.research);
+const papers = Astro.props.paperIds.map((id) => {
+  const p = r.paper.get(id);
+  if (!p) throw new Error(`[research] PaperSelection: 등록되지 않은 논문 '${id}'`);
+  return p;
+});
+---
+
+<div class="rs rs-grid not-content">
+  {papers.map((p) => <PaperCard paper={p} research={r} />)}
+</div>

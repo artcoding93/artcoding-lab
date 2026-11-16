@@ -1,0 +1,267 @@
+---
+// Paper Library: 시대별 타임라인 · 연구 분야 필터 · 논문 카드 · 검증 대기 목록
+import { PAPER_STATUSES, PAPER_STATUS_ORDER, type ResearchDef } from '../../lib/research';
+import { loadResearch } from './load-research';
+import PaperCard from './PaperCard.astro';
+import './research.css';
+
+interface Props {
+  research: ResearchDef;
+}
+
+const r = await loadResearch(Astro.props.research);
+const decades = [...new Set(r.papers.map((p) => p.decade))];
+const byDecade = decades.map((d) => ({ decade: d, key: d.slice(0, 4), papers: r.papers.filter((p) => p.decade === d) }));
+const usedAreas = r.areas.filter((a) => r.papers.some((p) => p.areas.includes(a.id)));
+const stageOf = new Map(r.stages.map((s) => [s.id, s]));
+---
+
+<section class="rs rs-library not-content" data-library>
+  <div class="rs-card rs-library__summary">
+    <dl class="rs-library__stats">
+      <div><dt>등록 논문</dt><dd>{r.stats.papers}</dd></div>
+      {PAPER_STATUS_ORDER.map((s) => (
+        <div data-s={s}><dt><span class="rs-badge" data-s={s}>{PAPER_STATUSES[s].label}</span></dt><dd>{r.stats.byStatus[s]}</dd></div>
+      ))}
+      <div><dt>검증 대기</dt><dd>{r.stats.pending}</dd></div>
+    </dl>
+    <p class="rs-library__note">
+      상태는 실제 작업 결과만 반영합니다. 리뷰 페이지가 없으면 '리뷰 완료', 재현 코드가 없으면 '재현 완료', 완료된 실험이 없으면 '실험 검증'으로 표시할 수 없습니다(빌드 시 검사).
+    </p>
+  </div>
+
+  <nav class="rs-era" aria-label="시대별 Research Timeline">
+    <ol>
+      {byDecade.map((g) => (
+        <li>
+          <a href={`#era-${g.key}`}>
+            <span class="rs-era__decade">{g.decade}</span>
+            <span class="rs-era__count">{g.papers.length}편</span>
+            <span class="rs-era__dots" aria-hidden="true">{g.papers.map((p) => <i data-s={p.status} />)}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+
+  <div class="rs-library__filters">
+    <div class="rs-chips" role="group" aria-label="연구 분야 필터">
+      <button type="button" class="rs-filter" data-area="all" aria-pressed="true">전체</button>
+      {usedAreas.map((a) => (
+        <button type="button" class="rs-filter" data-area={a.id} aria-pressed="false">{a.label}</button>
+      ))}
+    </div>
+    <p class="rs-library__count" aria-live="polite"><strong data-count>{r.papers.length}</strong>편 표시</p>
+  </div>
+
+  {byDecade.map((g) => (
+    <section class="rs-decade" id={`era-${g.key}`} data-decade>
+      <h3 class="rs-decade__title">{g.decade}</h3>
+      <div class="rs-grid">
+        {g.papers.map((p) => <PaperCard paper={p} research={r} anchor />)}
+      </div>
+    </section>
+  ))}
+
+  <section class="rs-pending">
+    <h3 class="rs-decade__title">검증 대기 목록</h3>
+    <p class="rs-muted rs-pending__intro">
+      서지정보(제목·저자·연도·출처)를 공식 메타데이터나 원문으로 확인하지 못한 논문입니다. 확인되기 전에는 라이브러리에 등록하지 않습니다.
+    </p>
+    {r.pending.length ? (
+      <ul class="rs-list">
+        {r.pending.map((p) => (
+          <li class="rs-card rs-card--dashed rs-pending__item">
+            <p>{p.citation}</p>
+            <p class="rs-muted">
+              {p.reason} · {p.stages.map((s) => `Stage ${stageOf.get(s)!.number}`).join(', ')}
+            </p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="rs-empty">검증 대기 중인 논문이 없습니다.</p>
+    )}
+  </section>
+</section>
+
+<style>
+  .rs-library__summary {
+    background: var(--rs-surface);
+  }
+  .rs-library__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.4rem;
+    margin: 0;
+  }
+  .rs-library__stats div {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .rs-library__stats dt {
+    font-size: 0.82rem;
+    color: var(--rs-muted);
+  }
+  .rs-library__stats dd {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    font-variant-numeric: tabular-nums;
+  }
+  .rs-library__note {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--rs-muted);
+    word-break: keep-all;
+  }
+  .rs-era ol {
+    display: flex;
+    gap: 0;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    border-top: 2px solid var(--rs-border);
+  }
+  .rs-era li {
+    flex: 1 0 6.5rem;
+  }
+  .rs-era a {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.75rem 0.5rem 0.5rem;
+    color: inherit;
+    text-decoration: none;
+  }
+  .rs-era a::before {
+    content: '';
+    position: absolute;
+    top: -0.4rem;
+    left: 0.5rem;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    background: var(--rs-accent);
+  }
+  .rs-era a:hover .rs-era__decade {
+    color: var(--rs-accent);
+  }
+  .rs-era__decade {
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .rs-era__count {
+    font-size: 0.78rem;
+    color: var(--rs-muted);
+  }
+  .rs-era__dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .rs-era__dots i {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--rs-c);
+  }
+  .rs-era__dots i[data-s='candidate'] {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--rs-c);
+  }
+  .rs-library__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 1.25rem 0 0;
+  }
+  .rs-filter {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--rs-border);
+    border-radius: 999px;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .rs-filter:hover {
+    border-color: var(--rs-accent);
+  }
+  .rs-filter[aria-pressed='true'] {
+    border-color: var(--rs-accent);
+    background: color-mix(in srgb, var(--rs-accent) 14%, transparent);
+    font-weight: 600;
+  }
+  .rs-filter:focus-visible {
+    outline: 2px solid var(--rs-accent);
+    outline-offset: 2px;
+  }
+  .rs-library__count {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--rs-muted);
+  }
+  .rs-decade {
+    margin-top: 1.75rem;
+    scroll-margin-top: calc(var(--sl-nav-height, 3.5rem) + 1rem);
+  }
+  .rs-decade__title {
+    margin: 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rs-border);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .rs-pending {
+    margin-top: 2.25rem;
+  }
+  .rs-pending__intro {
+    margin: 0.6rem 0 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+  .rs-pending__item p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  .rs-pending__item p + p {
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+  }
+  .rs-pending__item + .rs-pending__item {
+    margin-top: 0.5rem;
+  }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-library]')) {
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-area]')];
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-paper]')];
+    const decades = [...root.querySelectorAll<HTMLElement>('[data-decade]')];
+    const count = root.querySelector('[data-count]')!;
+    const apply = (area: string) => {
+      for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.area === area));
+      let n = 0;
+      for (const card of cards) {
+        const show = area === 'all' || (card.dataset.areas ?? '').split(' ').includes(area);
+        card.hidden = !show;
+        if (show) n++;
+      }
+      for (const d of decades) d.hidden = !d.querySelector('[data-paper]:not([hidden])');
+      count.textContent = String(n);
+    };
+    for (const b of buttons) b.addEventListener('click', () => apply(b.dataset.area!));
+  }
+</script>

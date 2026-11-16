@@ -1,0 +1,188 @@
+---
+// Benchmark & Experiments: 공통 테스트 형상 · 평가 지표 · 실험 계획
+import { ALGORITHM_STATUSES, EXPERIMENT_STATUSES, type ResearchDef } from '../../lib/research';
+import { loadResearch } from './load-research';
+import './research.css';
+
+interface Props {
+  research: ResearchDef;
+  show: 'geometries' | 'metrics' | 'experiments';
+}
+
+const { research, show } = Astro.props;
+const r = await loadResearch(research);
+const base = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${r.basePath}`;
+const algorithmOf = new Map(r.algorithms.map((a) => [a.id, a]));
+const geometryOf = new Map(r.geometries.map((g) => [g.id, g]));
+const metricOf = new Map(r.metrics.map((m) => [m.id, m]));
+const stageOf = new Map(r.stages.map((s) => [s.id, s]));
+const usage = (key: 'geometryIds' | 'metricIds', id: string) => r.experiments.filter((x) => x[key].includes(id)).length;
+---
+
+{show === 'geometries' && (
+  <ul class="rs rs-grid rs-x__small not-content">
+    {r.geometries.map((g) => (
+      <li class="rs-card">
+        <p class="rs-x__name">{g.name}</p>
+        <p class="rs-x__desc">{g.purpose}</p>
+        <p class="rs-muted rs-x__use">실험 {usage('geometryIds', g.id)}개에서 사용 예정</p>
+      </li>
+    ))}
+  </ul>
+)}
+
+{show === 'metrics' && (
+  <div class="rs not-content rs-x__table">
+    <table>
+      <thead><tr><th>지표</th><th>의미</th><th>사용 실험</th></tr></thead>
+      <tbody>
+        {r.metrics.map((m) => (
+          <tr>
+            <td>{m.name}{m.optional && <span class="rs-tag rs-x__opt">선택</span>}</td>
+            <td>{m.description}</td>
+            <td>{usage('metricIds', m.id)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+{show === 'experiments' && (
+  <ul class="rs rs-list not-content">
+    {r.experiments.map((x) => (
+      <li class="rs-card rs-x" id={`exp-${x.id}`}>
+        <div class="rs-x__head">
+          <div>
+            <p class="rs-x__eyebrow"><a href={`${base}/roadmap/#stage-${x.stage}`}>Stage {stageOf.get(x.stage)!.number}</a> · {stageOf.get(x.stage)!.title}</p>
+            <h4>{x.title}</h4>
+          </div>
+          <span class="rs-badge" data-s={x.status}>{EXPERIMENT_STATUSES[x.status].label}</span>
+        </div>
+        <p class="rs-x__desc">{x.goal}</p>
+        <div class="rs-x__grid">
+          <div>
+            <span class="rs-label">비교 알고리즘</span>
+            <ul class="rs-chips">
+              {x.algorithmIds.map((id) => (
+                <li><a class="rs-tag" href={`${base}/algorithms/#alg-${id}`}>{algorithmOf.get(id)!.name}</a> <span class="rs-badge" data-s={algorithmOf.get(id)!.status}>{ALGORITHM_STATUSES[algorithmOf.get(id)!.status].label}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <span class="rs-label">테스트 형상</span>
+            <ul class="rs-chips">{x.geometryIds.map((id) => <li class="rs-tag">{geometryOf.get(id)!.name}</li>)}</ul>
+            <span class="rs-label rs-x__sub">평가 지표</span>
+            <ul class="rs-chips">{x.metricIds.map((id) => <li class="rs-tag">{metricOf.get(id)!.name}</li>)}</ul>
+          </div>
+        </div>
+        <p class="rs-x__result">
+          {x.reportHref ? <a href={x.reportHref}>결과 보고서 →</a> : <span class="rs-muted">결과 없음 — 재현 알고리즘이 준비된 뒤 실험을 수행합니다.</span>}
+        </p>
+      </li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .rs-x__name {
+    margin: 0;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .rs-x__desc {
+    margin: 0.3rem 0 0;
+    font-size: 0.87rem;
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+  .rs-x__use {
+    margin: 0.4rem 0 0;
+    font-size: 0.76rem;
+  }
+  .rs-x__table {
+    overflow-x: auto;
+  }
+  .rs-x__table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+  }
+  .rs-x__table th,
+  .rs-x__table td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--rs-border);
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .rs-x__table th {
+    font-size: 0.78rem;
+    color: var(--rs-muted);
+  }
+  .rs-x__table td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .rs-x__opt {
+    margin-left: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+  }
+  .rs-x + .rs-x {
+    margin-top: 0.75rem;
+  }
+  .rs-x__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .rs-x__head h4 {
+    margin: 0.15rem 0 0;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .rs-x__eyebrow {
+    margin: 0;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--rs-muted);
+  }
+  .rs-x__eyebrow a {
+    color: var(--rs-accent);
+    text-decoration: none;
+  }
+  .rs-x__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem 1.25rem;
+    margin-top: 0.85rem;
+  }
+  .rs-x__grid .rs-chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .rs-x__grid a.rs-tag {
+    text-decoration: none;
+  }
+  .rs-x__sub {
+    margin-top: 0.6rem;
+  }
+  .rs-x__result {
+    margin: 0.85rem 0 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--rs-border);
+    font-size: 0.84rem;
+  }
+  @media (max-width: 600px) {
+    .rs-x__grid {
+      grid-template-columns: 1fr;
+    }
+    .rs-x__head {
+      flex-direction: column;
+    }
+  }
+</style>

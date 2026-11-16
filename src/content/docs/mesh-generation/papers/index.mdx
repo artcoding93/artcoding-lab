@@ -1,0 +1,43 @@
+---
+title: Paper Library
+description: 메시 생성 분야의 핵심 원 논문을 시대순으로 정리하고 서지정보, 핵심 기여, 알고리즘 계보, 연구 상태를 관리하는 논문 라이브러리
+tableOfContents: false
+---
+
+import PaperLibrary from '../../../../components/research/PaperLibrary.astro';
+import { meshResearch } from '../../../../data/mesh-research';
+
+메시 생성 연구의 핵심 원 논문을 시대순으로 정리합니다. 고전 논문과 후속 연구를 연결해 **어떤 문제를 해결하기 위해 새로운 알고리즘이 등장했는지** 따라갈 수 있게 합니다.
+
+<details>
+<summary>등록 기준과 상태 정의</summary>
+
+- 제목·저자·연도·학술지·DOI는 Crossref 등 공식 메타데이터로 확인한 뒤 등록하고, 각 카드에 확인 출처와 날짜를 남깁니다. 확인되지 않은 논문은 아래 **검증 대기 목록**에 둡니다.
+- **핵심 기여**는 리뷰 전에는 널리 알려진 기여의 요약이며, 원문을 리뷰한 뒤 원문 기준으로 고쳐 씁니다.
+- **알고리즘 계보**는 연구 흐름상의 연결입니다. 실제 인용 관계는 리뷰할 때 원문으로 확인합니다.
+- 상태: 후보(candidate) → 선정(selected) → 리뷰 중(reviewing) → 리뷰 완료(reviewed) → 재현 완료(reproduced) → 실험 검증(validated)
+
+</details>
+
+<details>
+<summary>논문 리뷰 페이지 구성</summary>
+
+1. 논문 정보
+2. 역사적 배경
+3. 기존 알고리즘의 한계
+4. 논문의 핵심 기여 — **왜 당시 혁신적이었는가**
+5. 알고리즘 원리
+6. 수학적 정의
+7. 의사코드
+8. 인터랙티브 시각화
+9. Python 재현 구현 (원 논문 구현과 단순화 구현을 구분)
+10. 실험 결과
+11. 알고리즘의 장단점
+12. 후속 연구와의 연결
+13. 새로운 연구 아이디어
+
+리뷰는 요약이 아니라 이전 알고리즘과의 차이를 그림과 단계별 시각화로 보여 주는 분석입니다. 논문의 그림·표는 복제하지 않고 직접 새로 만듭니다.
+
+</details>
+
+<PaperLibrary research={meshResearch} />

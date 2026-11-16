@@ -1,0 +1,56 @@
+---
+title: Mesh Generation Research Lab
+description: 고전 삼각분할 알고리즘부터 최신 AI 기반 메시 생성 연구까지, 주요 논문을 코드로 재현하고 새로운 2D 삼각형 메시 생성 알고리즘을 탐구하는 연구 플랫폼
+---
+
+import ProjectHero from '../../../components/project/ProjectHero.astro';
+import ResearchOverview from '../../../components/research/ResearchOverview.astro';
+import { meshResearch } from '../../../data/mesh-research';
+
+<ProjectHero
+  title="메시 생성 알고리즘 연구"
+  description="고전 삼각분할 알고리즘부터 최신 AI 기반 메시 생성 연구까지, 주요 논문을 코드로 재현하고 새로운 메시 생성 알고리즘을 탐구합니다."
+  accent="#0891b2"
+>
+  <svg slot="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+    <path d="M12 3 3 20h18Z" />
+    <path d="M12 3v11.5M3 20l9-5.5 9 5.5" />
+    <circle cx="12" cy="3" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="3" cy="20" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="21" cy="20" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="14.5" r="1.4" fill="currentColor" stroke="none" />
+  </svg>
+</ProjectHero>
+
+## 연구 목표
+
+이 분야는 완성된 지식을 강의하는 곳이 아니라, **역사적으로 혁신적인 논문을 재현하고 분석하면서 새로운 메시 생성 알고리즘을 개발해 나가는 연구 플랫폼**입니다.
+
+> 메시 생성 분야에서 시대적으로 혁신적인 논문들을 분석하고, 핵심 알고리즘을 직접 구현·시각화·검증하면서 기술 발전의 흐름을 이해한다. 이를 바탕으로 기존 알고리즘의 한계를 발견하고, 새로운 2D 삼각형 메시 생성 알고리즘을 개발한다.
+
+**주요 주제** 계산 기하학(Computational Geometry) · Delaunay 삼각분할(Delaunay Triangulation) · 메시 생성(Mesh Generation) · 메시 최적화(Mesh Optimization) · 적응형 메시(Adaptive Meshing) · AI 기반 메시 생성(AI-driven Mesh Generation)
+
+## 연구 플랫폼 구성
+
+다섯 영역은 고유 ID로 연결됩니다. 논문 카드에서 해당 논문의 리뷰, 재현 구현, 실험, 연구 노트로 이동할 수 있고, 각 Stage에는 관련 논문·알고리즘·실험이 자동으로 모입니다.
+
+<ResearchOverview research={meshResearch} />
+
+## 연구 범위
+
+| 구분 | 내용 |
+|---|---|
+| 주 연구 대상 | 2D 삼각형 메시 생성(2D Triangular Mesh Generation) |
+| 비교 연구 | 사각형 메시 생성(Quadrilateral Mesh Generation), 예: Paving |
+| 구현 | Python(NumPy·SciPy·Matplotlib·pytest)으로 시작하고, 병목이 확인된 핵심부만 C++ 등으로 최적화 |
+| 최종 목표 | 새로운 메시 생성 알고리즘의 제안과 검증 |
+
+상용 메시 생성 소프트웨어의 내부 알고리즘 분석, 제품별 기능 비교, 특정 프로그램이 채택한 기술 조사는 범위에서 제외합니다. 연구의 중심은 **학술적으로 중요한 원 논문과 그 알고리즘적 기여**입니다.
+
+## 연구 원칙
+
+- **상태는 실제 결과만 반영합니다.** 논문을 읽지 않았으면 '리뷰 완료', 알고리즘을 구현하지 않았으면 '재현 완료', 실험하지 않았으면 '실험 검증'으로 표시하지 않습니다. 이 조건은 빌드할 때 자동으로 검사됩니다.
+- **서지정보는 확인된 것만 등록합니다.** 제목·저자·연도·DOI를 공식 메타데이터로 확인하고, 불확실한 논문은 검증 대기 목록에 둡니다.
+- **재현은 핵심 계산을 직접 구현하는 것입니다.** 외부 메시 라이브러리는 검증·비교용으로만 사용하며, 원 논문 재현과 교육용 단순화 구현을 구분합니다.
+- **실험값을 만들어내지 않습니다.** 실험 결과는 실제로 실행한 값만 기록합니다.
+- **논문의 그림과 표를 복제하지 않습니다.** 필요한 그림은 직접 새로 만듭니다.

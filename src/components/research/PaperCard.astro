@@ -1,0 +1,206 @@
+---
+// 논문 카드: 서지정보 · 상태 · 핵심 기여 · 계보(선행·후속) · 리뷰/구현/실험/노트 연결
+import { PAPER_STATUSES, ALGORITHM_STATUSES, EXPERIMENT_STATUSES, type ResolvedPaper, type ResolvedResearch } from '../../lib/research';
+import './research.css';
+
+interface Props {
+  paper: ResolvedPaper;
+  research: ResolvedResearch;
+  /** 카드 id 앵커와 필터용 data 속성을 넣는다 (Paper Library 전용) */
+  anchor?: boolean;
+}
+
+const { paper: p, research: r, anchor = false } = Astro.props;
+const base = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${r.basePath}`;
+const papersHref = (id: string) => `${base}/papers/#paper-${id}`;
+const authors = p.authors.length > 4 ? `${p.authors.slice(0, 3).join(', ')} 외 ${p.authors.length - 3}명` : p.authors.join(', ');
+const stageOf = new Map(r.stages.map((s) => [s.id, s]));
+const algorithmOf = new Map(r.algorithms.map((a) => [a.id, a]));
+const experimentOf = new Map(r.experiments.map((x) => [x.id, x]));
+const noteOf = new Map(r.notes.map((n) => [n.id, n]));
+const areaLabel = new Map(r.areas.map((a) => [a.id, a.label]));
+const reviewedOrLater = ['reviewed', 'reproduced', 'validated'].includes(p.status);
+const kindLabel = { original: '원 논문', survey: '서베이', comparison: '비교 연구' }[p.kind];
+const citation = [p.venue, p.volume && `vol. ${p.volume}`, p.issue && `no. ${p.issue}`, p.pages && `pp. ${p.pages}`].filter(Boolean).join(', ');
+---
+
+<article
+  class="rs-card rs-paper"
+  id={anchor ? `paper-${p.id}` : undefined}
+  data-paper={anchor ? '' : undefined}
+  data-areas={p.areas.join(' ')}
+  data-kind={p.kind}
+>
+  <header class="rs-paper__head">
+    <span class="rs-paper__year">{p.year}</span>
+    <span class="rs-badge" data-s={p.status} title={PAPER_STATUSES[p.status].hint}>{PAPER_STATUSES[p.status].label}</span>
+    {p.kind !== 'original' && <span class="rs-tag rs-paper__kind">{kindLabel}</span>}
+    <span class="rs-paper__cite">{p.cite}</span>
+  </header>
+  <h3 class="rs-paper__title">{p.title}</h3>
+  <p class="rs-paper__meta">
+    {authors}
+    <br />
+    <span class="rs-muted">{citation}</span>
+  </p>
+  <p class="rs-paper__links">
+    {p.doiUrl ? <a href={p.doiUrl} rel="noopener" target="_blank">DOI {p.doi}</a> : <a href={p.url} rel="noopener" target="_blank">{p.urlLabel ?? '원문 링크'}</a>}
+    {p.reviewHref ? <a href={p.reviewHref}>논문 리뷰 →</a> : <span class="rs-muted">리뷰 페이지 없음</span>}
+  </p>
+
+  <div class="rs-paper__section">
+    <span class="rs-label">핵심 기여 {reviewedOrLater ? '' : '· 리뷰 전 요약'}</span>
+    <ul>
+      {p.contributions.map((c) => <li>{c}</li>)}
+    </ul>
+  </div>
+
+  <div class="rs-paper__grid">
+    <div>
+      <span class="rs-label">Stage · 연구 분야</span>
+      <ul class="rs-chips">
+        {p.stages.map((id) => <li><a class="rs-tag" href={`${base}/roadmap/#stage-${id}`}>Stage {stageOf.get(id)!.number}</a></li>)}
+        {p.areas.map((id) => <li class="rs-tag">{areaLabel.get(id)}</li>)}
+      </ul>
+    </div>
+    {(p.predecessors?.length || p.successors.length) ? (
+      <div>
+        <span class="rs-label">알고리즘 계보</span>
+        {p.predecessors?.length ? (
+          <p class="rs-paper__lineage">← {p.predecessors.map((id, i) => <>{i > 0 && ', '}<a href={papersHref(id)}>{r.paper.get(id)!.cite}</a></>)}</p>
+        ) : null}
+        {p.successors.length ? (
+          <p class="rs-paper__lineage">→ {p.successors.map((id, i) => <>{i > 0 && ', '}<a href={papersHref(id)}>{r.paper.get(id)!.cite}</a></>)}</p>
+        ) : null}
+      </div>
+    ) : null}
+  </div>
+
+  <div class="rs-paper__progress">
+    <span class="rs-label">연구 연결</span>
+    <ul class="rs-list">
+      <li>
+        <span class="rs-paper__key">재현</span>
+        {p.algorithmIds.length ? p.algorithmIds.map((id) => {
+          const a = algorithmOf.get(id)!;
+          return <a class="rs-paper__link" href={`${base}/algorithms/#alg-${id}`}>{a.name} <span class="rs-badge" data-s={a.status}>{ALGORITHM_STATUSES[a.status].label}</span></a>;
+        }) : <span class="rs-muted">연결된 재현 항목 없음</span>}
+      </li>
+      <li>
+        <span class="rs-paper__key">실험</span>
+        {p.experimentIds.length ? p.experimentIds.map((id) => {
+          const x = experimentOf.get(id)!;
+          return <a class="rs-paper__link" href={`${base}/experiments/#exp-${id}`}>{x.title} <span class="rs-badge" data-s={x.status}>{EXPERIMENT_STATUSES[x.status].label}</span></a>;
+        }) : <span class="rs-muted">연결된 실험 없음</span>}
+      </li>
+      <li>
+        <span class="rs-paper__key">노트</span>
+        {p.noteIds.length ? p.noteIds.map((id) => <a class="rs-paper__link" href={noteOf.get(id)!.href}>{noteOf.get(id)!.title}</a>) : <span class="rs-muted">연구 노트 없음</span>}
+      </li>
+    </ul>
+  </div>
+
+  <p class="rs-paper__verify">
+    서지정보 확인: {p.verification.sources.join(' · ')} ({p.verification.checkedOn})
+    {p.verification.note && <><br />{p.verification.note}</>}
+  </p>
+</article>
+
+<style>
+  .rs-paper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .rs-paper__head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  .rs-paper__year {
+    font-family: var(--sl-font-mono);
+    font-weight: 700;
+    color: var(--rs-accent);
+  }
+  .rs-paper__kind {
+    font-size: 0.7rem;
+  }
+  .rs-paper__cite {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--rs-muted);
+  }
+  .rs-paper__title {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--sl-color-white);
+  }
+  .rs-paper__meta,
+  .rs-paper__links {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  .rs-paper__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    word-break: break-all;
+  }
+  .rs-paper__section ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+  .rs-paper__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem 1.25rem;
+  }
+  .rs-paper__lineage {
+    margin: 0 0 0.2rem;
+    font-size: 0.84rem;
+    line-height: 1.55;
+  }
+  .rs-paper__progress li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.6rem;
+    padding: 0.2rem 0;
+    font-size: 0.84rem;
+  }
+  .rs-paper__key {
+    min-width: 2.2rem;
+    font-weight: 600;
+    color: var(--rs-muted);
+  }
+  .rs-paper__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  .rs-paper__link:hover {
+    text-decoration: underline;
+  }
+  .rs-paper__verify {
+    margin: auto 0 0;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--rs-border);
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--rs-muted);
+    word-break: keep-all;
+  }
+  @media (max-width: 600px) {
+    .rs-paper__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

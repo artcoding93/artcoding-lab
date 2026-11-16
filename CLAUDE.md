@@ -11,7 +11,7 @@
 - **슬로건**: 공학을 코드로 이해하다
 - **목적**: 수학적·공학적 이론을 코드로 구현하고, 시각화와 인터랙티브 실습으로 학습하는 교육 플랫폼
 - **대상**: 컴퓨터공학·공학계열 대학생, 관련 분야 입문자
-- **학습 분야**: 수치해석(Numerical Methods), 유한요소법(Finite Element Method, FEM), 양자컴퓨팅(Quantum Computing)
+- **학습 분야**: 수치해석(Numerical Methods), 유한요소법(Finite Element Method, FEM), 양자컴퓨팅(Quantum Computing), 광학 계측과 계산 영상(Optical Metrology & Computational Imaging)
 
 단순한 기술 블로그가 아니다. **이론과 구현을 한 페이지에서 함께 학습**하는 교육 플랫폼을 지향한다.
 
@@ -70,6 +70,8 @@ src/
   data/fem-solver-project.ts  # FEM Solver Project Phase 1–6, 강의 연결(강의 id), 예정 컴포넌트
   data/quantum-roadmap.ts # 양자컴퓨팅 8 Part · 48강 목차
   data/quantum-simulator-project.ts  # Quantum Simulator Project Phase 1–6, 강의 연결, 예정 컴포넌트
+  data/optical-roadmap.ts # 광학 계측 8 Part · 56강 목차
+  data/optical-simulator-project.ts  # Optical Metrology Simulator Project Phase 1–7, 강의 연결, 예정 컴포넌트
   components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
   components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
   content/docs/
@@ -77,6 +79,7 @@ src/
     numerical/            # index.mdx = 로드맵, root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
     fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project
     quantum/              # index.mdx = 양자컴퓨팅 로드맵, simulator-project/index.mdx = Quantum Simulator Project
+    optical/              # index.mdx = 광학 계측 로드맵, simulator-project/index.mdx = Optical Metrology Simulator Project
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
@@ -92,21 +95,21 @@ public/                   # 정적 파일 (favicon.svg)
 | 전체 실행 Python 코드 (다운로드용) | `public/code/<분야>/<주제>.py` | `public/code/numerical/bisection.py` |
 | 강의 이미지 | `src/assets/<분야>/` | `src/assets/fem/mesh-1d.png` |
 
-- 분야 디렉터리: `numerical`, `fem`, `quantum`
+- 분야 디렉터리: `numerical`, `fem`, `quantum`, `optical`
 - 파일명은 **영문 소문자와 하이픈**을 사용한다(kebab-case). 컴포넌트 파일만 PascalCase를 허용한다.
 - 인터랙티브 컴포넌트를 쓰는 페이지는 `.mdx`로 작성한다.
 
 ### 사이드바
 
-- 세 분야 모두 `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
-- 프로젝트 페이지는 `extraItems`로 넣는다: FEM은 'FEM Solver Project', 양자컴퓨팅은 'Quantum Simulator Project'.
+- 네 분야 모두 `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
+- 프로젝트 페이지는 `extraItems`로 넣는다: FEM은 'FEM Solver Project', 양자컴퓨팅은 'Quantum Simulator Project', 광학 계측은 'Optical Metrology Simulator Project'.
 
-### 로드맵 강의 공개 절차 (세 분야 공통)
+### 로드맵 강의 공개 절차 (네 분야 공통)
 
 강의 목록과 공개 상태의 기준은 `src/data/<분야>-roadmap.ts`이다. 번호는 배열 순서로 자동 계산되고, URL은 `slug`로 고정된다.
 
 1. 해당 강의의 `slug`를 확인한다. 공개 후에는 slug를 바꾸지 않는다. 제목과 순서는 바꿔도 URL에 영향이 없다.
-2. `src/content/docs/<분야>/<slug>.mdx`에 강의를 작성한다(4절 표준 구성, FEM·양자컴퓨팅은 4절의 분야별 설명 순서).
+2. `src/content/docs/<분야>/<slug>.mdx`에 강의를 작성한다(4절 표준 구성, FEM·양자컴퓨팅·광학 계측은 4절의 분야별 설명 순서).
 3. 강의가 완성되면 데이터에 `status: 'published'`를 추가한다. 임시 안내문이나 빈 템플릿은 공개하지 않는다.
 4. `npm run build`로 확인한다. 로드맵 링크, 진행률, 사이드바는 자동으로 반영된다.
    - 페이지가 없거나 `draft: true`인데 `published`로 표시하면 **빌드가 실패한다**.
@@ -114,26 +117,28 @@ public/                   # 정적 파일 (favicon.svg)
 - 새 강의를 추가할 때는 원하는 위치에 `{ id, title, en, slug }`를 넣는다. `id`와 `slug`는 중복될 수 없다(빌드 시 검사).
 - 페이지를 옮길 때는 `git mv`로 파일을 이동하고, 데이터의 `slug`를 수정하고, `astro.config.mjs`의 `redirects`에 이전 URL → 새 URL을 추가한다. 예: `/numerical/bisection` → `/numerical/root-finding/bisection/`
 - 새 상태(예: draft)는 `src/lib/roadmap.ts`의 `STATUSES`에 추가한다.
-- 난이도는 `intro`(입문)·`basic`·`intermediate`·`advanced`·`expert`·`research`이다. 로드맵별 라벨은 `levelLabels`로 바꾼다(FEM: research → '연구', 양자컴퓨팅: advanced → '프로젝트', expert → '확장'). 검색창 예시 검색어는 `searchExamples`로 지정한다. 필터에는 사용하는 난이도만 표시된다.
-- FEM·양자컴퓨팅 강의 `id`는 프로젝트의 연결 키이므로 **바꾸지 않는다**. 바꾸면 `fem-solver-project.ts`·`quantum-simulator-project.ts`도 함께 수정해야 하고, 그렇지 않으면 빌드가 실패한다.
+- 난이도는 `intro`(입문)·`basic`·`intermediate`·`advanced`·`expert`·`research`이다. 로드맵별 라벨은 `levelLabels`로 바꾼다(FEM: research → '연구', 양자컴퓨팅: advanced → '프로젝트', expert → '확장', 광학 계측: expert → '프로젝트'). 한 Part 안에서 난이도가 나뉘면 강의별 `level`로 지정한다. 검색창 예시 검색어는 `searchExamples`로 지정한다. 필터에는 사용하는 난이도만 표시된다.
+- FEM·양자컴퓨팅·광학 계측 강의 `id`는 프로젝트의 연결 키이므로 **바꾸지 않는다**. 바꾸면 해당 `*-project.ts`도 함께 수정해야 하고, 그렇지 않으면 빌드가 실패한다.
 
-### 단계별 프로젝트 진행 절차 (FEM Solver Project · Quantum Simulator Project)
+### 단계별 프로젝트 진행 절차 (FEM · Quantum · Optical Metrology)
 
 | 프로젝트 | 데이터 | 페이지 | 코드·컴포넌트 위치 |
 |---|---|---|---|
 | FEM Solver Project | `src/data/fem-solver-project.ts` | `/fem/solver-project/` | `public/code/fem/`, `src/components/fem/` |
 | Quantum Simulator Project | `src/data/quantum-simulator-project.ts` | `/quantum/simulator-project/` | `public/code/quantum/`, `src/components/quantum/` |
+| Optical Metrology Simulator Project | `src/data/optical-simulator-project.ts` | `/optical/simulator-project/` | `public/code/optical/`, `src/components/optical/` |
 
-**프로젝트 개발 진행률(완료 Phase / 6)과 강의 공개 진행률은 별개 지표이다.** 진행률 라벨은 `progressLabel`로 지정한다.
+**프로젝트 개발 진행률(완료 Phase / 전체 Phase)과 강의 공개 진행률은 별개 지표이다.** 진행률 라벨은 `progressLabel`로 지정한다.
 
 1. Phase 작업을 시작하면 해당 Phase(또는 Phase 6의 마일스톤)를 `status: 'in-progress'`로 바꾼다.
 2. 결과물(코드·시각화)이 실제로 생기면 결과물에 `page`(콘텐츠 ID, 예: `fem/solver-project/phase-1`) 또는 `file`(public/ 기준 경로, 예: `code/fem/mesh.py`)을 지정하고 `status: 'completed'`로 바꾼다.
 3. 모든 결과물(과 마일스톤)이 completed일 때만 Phase를 `completed`로 바꾼다.
 - 검증(빌드 실패): 결과물 없이 완료 표시, page/file 경로 없음, 미완료 항목이 있는 Phase를 완료 표시, 로드맵에 없는 강의 id 연결.
-- `checkpoints`는 Phase 사이의 별도 마일스톤이며 진행률에 포함하지 않는다: FEM '구조해석 확장'(Phase 5 뒤), 양자 '텔레포테이션 확장'(Phase 6 뒤, 중간 측정·조건부 연산 필요).
+- `checkpoints`는 Phase 사이의 별도 마일스톤이며 진행률에 포함하지 않는다: FEM '구조해석 확장'(Phase 5 뒤), 양자 '텔레포테이션 확장'(Phase 6 뒤, 중간 측정·조건부 연산 필요), 광학 '실측·표준시료 데이터 검증'(Phase 7 뒤).
 - 예정 인터랙티브 컴포넌트는 `components`에 계획만 있다. **실제로 구현하기 전에는 동작하는 것처럼 표현하지 않는다.** 구현하면 위 표의 컴포넌트 위치에 만들고 status를 올린다.
   - FEM: MeshViewer, ElementExplorer, AssemblyVisualizer, FEMSolverDemo, FieldViewer, DomainPartitionViewer
   - 양자: QubitStateViewer, QuantumGateExplorer, MeasurementVisualizer, QuantumCircuitEditor, BlochSphereViewer, QuantumAlgorithmDemo
+  - 광학: OpticalLayerViewer, ReflectanceSpectrumViewer, EllipsometryExplorer, InterferogramViewer, PhaseUnwrappingViewer, ConfocalResponseViewer, OCTScanViewer, HologramViewer, ParameterFittingExplorer, MeasurementErrorAnalyzer
 - 전체 코드는 `public/code/<분야>/` 아래에 둔다(다운로드 가능). 페이지에는 핵심 코드만 싣는다.
 - 양자 시뮬레이터 범위: 1~3큐비트 상태벡터, X·Y·Z·H·S·T·Rx·Ry·Rz·CNOT, 측정 확률·Shots, 블로흐 구면. 노이즈·오류 정정·하드웨어 시뮬레이션은 초기 범위에서 제외한다. 브라우저 JS 엔진은 Python 엔진과 같은 입력에 같은 결과(확률)를 내야 한다.
 
@@ -207,6 +212,25 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 - 코드는 NumPy 기반의 작은 예제로 작성한다. 초기 강의에서 Qiskit 등 양자 SDK 사용을 강제하지 않는다(SDK는 Part VIII에서 비교·검증용으로 다룬다).
 - 강의가 시뮬레이터 프로젝트의 Phase와 연결되어 있으면, 강의 끝에서 해당 Phase에서 무엇을 구현하는지 안내한다.
 
+### 광학 계측 강의 설명 순서
+
+장비 소개가 아니라 **물리 모델로 측정 데이터를 만들고(정방향 모델) 거꾸로 해석하는(역문제)** 계산 과정을 학습한다. 개념 강의와 구현 강의의 성격에 맞게 조정한다.
+
+1. 학습 목표
+2. 측정 대상과 실제 활용 사례
+3. 광학적 측정 원리
+4. 핵심 수식과 변수 설명
+5. 정방향 모델
+6. Python 코드 구현
+7. 합성 측정 데이터 생성
+8. 역해석 및 최적화
+9. 추정 결과와 실제 설정값 비교
+10. 오차 분석 및 핵심 정리
+
+- **데이터 원칙**: 초기에는 정답을 아는 합성 데이터를 사용한다. 합성 데이터와 실측 데이터는 그림·표·본문에서 항상 구분해 표시한다. 실측 데이터는 출처와 측정 조건을 밝히며, 확보되지 않은 데이터를 실제 장비 측정값처럼 만들거나 표시하지 않는다.
+- 광학적 두께($nd$)와 기하학적 두께($d$), OCT의 광학 경로 길이와 실제 깊이를 구분하고 굴절률 보정을 설명한다.
+- 예제는 NumPy·SciPy·Matplotlib을 우선 사용하고, 사용 목적을 본문에 적는다. 핵심 코드는 페이지에, 전체 코드는 `public/code/optical/`에 둔다.
+
 ---
 
 ## 5. Python 코드 규칙
@@ -235,6 +259,7 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 - **수치해석**: 함수 그래프, 반복점의 이동, 수렴 곡선
 - **FEM**: 메시, 요소, 해석 결과 분포
 - **양자컴퓨팅**: 양자 상태(진폭·확률, 블로흐 구), 회로 동작
+- **광학 계측**: 시료 층 구조, 측정 신호(스펙트럼·간섭무늬·초점 응답·A/B-scan), 피팅 수렴과 정답 비교
 
 구현 규칙:
 - 기본은 **Astro 컴포넌트 + `<script>` + Canvas/SVG**로 구현한다. 무거운 라이브러리는 꼭 필요할 때만 제안한다.
@@ -247,9 +272,9 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 
 ## 7. 디자인 원칙
 
-- 현재 홈페이지 디자인(`index.mdx`, `custom.css`의 카드 레이아웃)을 유지한다.
+- 현재 홈페이지 디자인(`index.mdx`, `custom.css`의 카드 레이아웃)을 유지한다. 학습 분야 카드는 데스크톱·태블릿 2열(2×2), 모바일 1열이다.
 - 간결하고 현대적인 교육 플랫폼 디자인을 지향하며, 수식과 코드의 가독성을 우선한다.
-- 분야별 색상을 일관되게 사용한다: 수치해석 `#2563eb`(파랑), FEM `#9333ea`(보라), 양자컴퓨팅 `#16a34a`(초록)
+- 분야별 색상을 일관되게 사용한다: 수치해석 `#2563eb`(파랑), FEM `#9333ea`(보라), 양자컴퓨팅 `#16a34a`(초록), 광학 계측 `#ea580c`(주황)
 - 색상, 테두리, 배경은 가능한 한 Starlight CSS 변수(`--sl-color-*`)를 사용해 **다크 모드와 호환**되게 한다.
 - PC, 태블릿(≤900px), 모바일(≤600px)에서 모두 확인한다. 기존 브레이크포인트를 따른다.
 - 컴포넌트 전용 스타일은 컴포넌트 안의 scoped `<style>`에 둔다. `custom.css`는 전역에 영향을 주므로, 수정하기 전에 다른 페이지(특히 홈)에 미치는 영향을 검토한다.

@@ -7,6 +7,7 @@ import { roadmapSidebar } from './src/lib/roadmap.ts';
 import { numericalRoadmap } from './src/data/numerical-roadmap.ts';
 import { femRoadmap } from './src/data/fem-roadmap.ts';
 import { quantumRoadmap } from './src/data/quantum-roadmap.ts';
+import { opticalRoadmap } from './src/data/optical-roadmap.ts';
 
 export default defineConfig({
   // 이동한 페이지의 이전 URL → 새 URL (외부 링크·북마크 보존)
@@ -25,7 +26,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'artcoding Lab',
-      description: '수치해석, FEM, 양자컴퓨팅을 위한 공학 학습 플랫폼',
+      description: '수치해석, FEM, 양자컴퓨팅, 광학 계측을 위한 공학 학습 플랫폼',
 
       // 사용자 정의 CSS (KaTeX 스타일 포함)
       customCss: ['katex/dist/katex.min.css', './src/styles/custom.css'],
@@ -51,6 +52,12 @@ export default defineConfig({
           label: '양자컴퓨팅',
           overviewLabel: '양자컴퓨팅 학습 로드맵',
           extraItems: [{ label: 'Quantum Simulator Project', slug: 'quantum/simulator-project' }],
+        }),
+        // 광학 계측: 로드맵 + 시뮬레이터 프로젝트 + 공개된 강의만 자동 표시 (src/data/optical-roadmap.ts 기준)
+        roadmapSidebar(opticalRoadmap, {
+          label: '광학 계측과 계산 영상',
+          overviewLabel: '광학 계측 학습 로드맵',
+          extraItems: [{ label: 'Optical Metrology Simulator Project', slug: 'optical/simulator-project' }],
         }),
       ],
     }),

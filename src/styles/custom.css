@@ -13,10 +13,10 @@
   margin: 0 0 0.7rem;
 }
 
-/* 학습 분야 3열 배치 */
+/* 학습 분야 2×2 배치 (4개 분야) */
 .learning-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
   margin-top: 1.5rem;
 }
@@ -79,6 +79,11 @@
 .quantum .learning-icon {
   background: #dcfce7;
   color: #16a34a;
+}
+
+.optical .learning-icon {
+  background: #ffedd5;
+  color: #ea580c;
 }
 
 /* 카드 하단 링크 */

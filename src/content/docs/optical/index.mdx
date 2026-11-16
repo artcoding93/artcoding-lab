@@ -1,0 +1,33 @@
+---
+title: 광학 계측과 계산 영상 학습 로드맵
+description: 빛의 반사·간섭·초점·단층 영상 원리부터 정방향 모델, 역문제, 통합 시뮬레이터까지 8개 Part, 56개 강의로 구성된 광학 계측과 계산 영상(Optical Metrology & Computational Imaging) 학습 로드맵
+tableOfContents: false
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+import LearningRoadmap from '../../../components/roadmap/LearningRoadmap.astro';
+import { opticalRoadmap } from '../../../data/optical-roadmap';
+
+빛의 반사·간섭·초점·단층 영상 원리를 배우고, 합성 측정 데이터와 Python 알고리즘을 통해 박막 두께, 표면 단차, 내부 계면을 복원합니다.
+
+**주요 주제** 박막 두께 측정(Thin-Film Measurement) · 광 간섭계(Optical Interferometry) · 표면 형상 측정(Surface Profilometry) · 계산 영상(Computational Imaging) · 역문제(Inverse Problems)
+
+**학습 흐름** 측정 대상 정의 → 측정 원리 → 정방향 모델 → 합성 데이터 생성 → 노이즈·오차 추가 → 역문제 풀이 → 최적화로 매개변수 추정 → 정답과 비교 → 오차·불확도·측정 한계 분석
+
+<details>
+<summary>이 로드맵의 학습 방식과 데이터 원칙</summary>
+
+- 측정 장비를 소개하는 대신, **물리 모델로 측정 데이터를 만들고(정방향 모델) 그 데이터에서 시료의 매개변수를 거꾸로 찾아내는(역문제)** 계산 과정을 학습합니다.
+- 예를 들어 박막 두께 측정에서는 두께 $d$와 굴절률 $n$으로 반사율 스펙트럼 $R(\lambda)$를 계산하고, 측정된 스펙트럼과 가장 잘 맞는 $d$를 최적화로 찾습니다.
+- 처음에는 **정답을 알고 있는 합성 데이터**로 알고리즘을 검증합니다. 이후 출처가 명확한 공개 실측 데이터나 표준시료 데이터로 확장합니다.
+- 합성 데이터와 실측 데이터는 항상 구분해 표시합니다. 실측 데이터가 없는 경우 합성 데이터를 실제 장비의 측정값처럼 보여 주지 않습니다.
+
+</details>
+
+<LinkCard
+  title="Optical Metrology Simulator Project"
+  description="강의와 연결된 7단계 프로젝트로 SR·SE·WSI·PSI·Confocal·OCT·DHM을 아우르는 교육용 광학 계측 시뮬레이터를 직접 구현합니다."
+  href="/optical/simulator-project/"
+/>
+
+<LearningRoadmap roadmap={opticalRoadmap} />

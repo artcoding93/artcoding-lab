@@ -11,6 +11,7 @@ export const femRoadmap = defineRoadmap({
   basePath: 'fem',
   title: '유한요소법',
   levelLabels: { research: '연구' },
+  searchExamples: ['희소행렬', 'MPI'],
   parts: [
     {
       id: 'intuition',

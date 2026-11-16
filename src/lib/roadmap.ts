@@ -59,6 +59,8 @@ export interface RoadmapDef {
   title: string;
   /** 이 로드맵에서만 쓰는 난이도 라벨 (기본값은 LEVELS의 label) */
   levelLabels?: Partial<Record<LevelId, string>>;
+  /** 검색창 안내 문구에 보여 줄 예시 검색어 (기본: 뉴턴, Spline) */
+  searchExamples?: string[];
   parts: PartDef[];
 }
 

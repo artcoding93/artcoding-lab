@@ -6,6 +6,7 @@ import { satteriKatex } from './src/plugins/satteri-katex.mjs';
 import { roadmapSidebar } from './src/lib/roadmap.ts';
 import { numericalRoadmap } from './src/data/numerical-roadmap.ts';
 import { femRoadmap } from './src/data/fem-roadmap.ts';
+import { quantumRoadmap } from './src/data/quantum-roadmap.ts';
 
 export default defineConfig({
   // 이동한 페이지의 이전 URL → 새 URL (외부 링크·북마크 보존)
@@ -45,12 +46,12 @@ export default defineConfig({
           overviewLabel: 'FEM 학습 로드맵',
           extraItems: [{ label: 'FEM Solver Project', slug: 'fem/solver-project' }],
         }),
-        {
+        // 양자컴퓨팅: 로드맵 + 시뮬레이터 프로젝트 + 공개된 강의만 자동 표시 (src/data/quantum-roadmap.ts 기준)
+        roadmapSidebar(quantumRoadmap, {
           label: '양자컴퓨팅',
-          items: [
-            { label: '양자컴퓨팅 소개', slug: 'quantum' },
-          ],
-        },
+          overviewLabel: '양자컴퓨팅 학습 로드맵',
+          extraItems: [{ label: 'Quantum Simulator Project', slug: 'quantum/simulator-project' }],
+        }),
       ],
     }),
   ],

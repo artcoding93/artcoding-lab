@@ -91,7 +91,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <input
         id={`${uid}-search`}
         type="search"
-        placeholder="강의 제목 검색 (예: 뉴턴, Spline)"
+        placeholder={`강의 제목 검색 (예: ${(roadmap.searchExamples ?? ['뉴턴', 'Spline']).join(', ')})`}
         autocomplete="off"
         spellcheck="false"
         data-search

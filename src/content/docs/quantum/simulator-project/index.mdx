@@ -1,0 +1,68 @@
+---
+title: Quantum Simulator Project
+description: 양자컴퓨팅 강의와 연결된 6단계 프로젝트로 브라우저에서 실행되는 1~3큐비트 상태벡터 양자회로 시뮬레이터를 구현합니다.
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+import ProjectHero from '../../../../components/project/ProjectHero.astro';
+import ProjectRoadmap from '../../../../components/project/ProjectRoadmap.astro';
+import ProjectComponentPlan from '../../../../components/project/ProjectComponentPlan.astro';
+import { quantumSimulatorProject } from '../../../../data/quantum-simulator-project';
+import { quantumRoadmap } from '../../../../data/quantum-roadmap';
+
+<ProjectHero
+  title="Build Your Own Quantum Simulator"
+  description="양자 상태를 표현하는 Python 코드부터 양자 게이트, 회로 실행 엔진, 웹 시뮬레이터까지 단계적으로 구현합니다."
+  accent="#16a34a"
+>
+  <svg slot="icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="16" cy="16" r="12" />
+    <ellipse cx="16" cy="16" rx="12" ry="4.5" stroke-dasharray="2 3" />
+    <path d="M16 16 L22 7" />
+    <circle cx="22" cy="7" r="1.8" fill="currentColor" stroke="none" />
+  </svg>
+</ProjectHero>
+
+## 프로젝트 소개
+
+양자컴퓨팅 강의에서 배운 개념을 하나의 **교육용 양자회로 시뮬레이터**로 직접 구현하는 프로젝트입니다. 각 Phase는 양자컴퓨팅 학습 로드맵의 강의와 연결되어 있어, 강의에서 배운 내용이 곧바로 시뮬레이터의 한 부분이 됩니다.
+
+시뮬레이터는 **상태벡터(State Vector)** 방식으로 동작합니다. $n$개 큐비트의 상태는 $2^n$개의 복소 진폭을 담은 벡터이고, 게이트는 이 벡터에 곱하는 유니터리 행렬입니다.
+
+$$
+\lvert\psi'\rangle = U\lvert\psi\rangle, \qquad P(x) = \lvert\langle x \vert \psi\rangle\rvert^2
+$$
+
+- $\lvert\psi\rangle$: 현재 양자 상태(상태벡터), $U$: 게이트를 나타내는 유니터리 행렬
+- $P(x)$: 측정했을 때 기저 상태 $\lvert x\rangle$(예: $\lvert 01\rangle$)가 나올 확률
+- 회로를 실행한다는 것은 게이트 행렬을 순서대로 곱해 상태벡터를 갱신하고, 마지막에 확률 분포에서 측정 결과를 샘플링(Shots)하는 과정입니다.
+
+실제 양자 하드웨어를 모사하는 시뮬레이터가 아니라, 양자컴퓨팅의 핵심 원리를 눈으로 확인하기 위한 **학습용 시뮬레이터**입니다.
+
+## 구현 범위
+
+| 구분 | 내용 |
+|---|---|
+| 큐비트 수 | 1~3개 (상태벡터 크기 최대 $2^3 = 8$) |
+| 계산 방식 | 상태벡터 기반 |
+| 기본 게이트 | X, Y, Z, H |
+| 확장 게이트 | S, T, Rx, Ry, Rz, CNOT |
+| 실행과 측정 | 회로 생성·실행, 측정 확률 계산, Shots 기반 샘플링 |
+| 시각화 | 상태벡터·확률 분포, 단일 큐비트 블로흐 구면 |
+| 예제 | Bell 상태, GHZ 상태, 작은 규모의 Grover 알고리즘 |
+
+실제 양자 노이즈, 오류 정정, 하드웨어 수준 시뮬레이션은 초기 구현 범위에 포함하지 않습니다. 양자 텔레포테이션은 회로 중간의 측정과 조건부 연산이 필요하므로, 기본 엔진을 완성한 뒤 **별도 확장 기능**으로 다룹니다.
+
+## 개발 현황과 단계별 로드맵
+
+시뮬레이터 개발 진행률은 **완료된 Phase** 기준이며, 강의 공개 진행률과는 별개의 지표입니다. 실제 기능이 구현되고 검증된 단계만 '완료'로 표시합니다.
+
+<ProjectRoadmap project={quantumSimulatorProject} roadmap={quantumRoadmap} />
+
+## 인터랙티브 학습 컴포넌트 계획
+
+각 Phase에 맞춰 브라우저에서 직접 조작해 볼 수 있는 학습 컴포넌트를 개발할 예정입니다. **아래 컴포넌트는 아직 구현되지 않았으며**, 구현되면 해당 강의 페이지에 포함됩니다.
+
+<ProjectComponentPlan project={quantumSimulatorProject} roadmap={quantumRoadmap} />
+
+<LinkCard title="양자컴퓨팅 학습 로드맵" description="8개 Part, 48개 강의 전체 목차" href="/quantum/" />

@@ -71,6 +71,8 @@ export interface PlannedComponentDef {
 export interface ProjectDef {
   id: string;
   title: string;
+  /** 개발 진행률 라벨 (기본값 '개발 진행률', 예: '솔버 개발 진행률') */
+  progressLabel?: string;
   phases: PhaseDef[];
   checkpoints?: CheckpointDef[];
   components?: PlannedComponentDef[];
@@ -122,6 +124,7 @@ export interface ProjectStats {
 export interface ResolvedProject {
   id: string;
   title: string;
+  progressLabel: string;
   phases: ResolvedPhase[];
   checkpoints: ResolvedCheckpoint[];
   components: PlannedComponentDef[];
@@ -234,6 +237,7 @@ export function resolveProject(project: ProjectDef, options: ResolveProjectOptio
   return {
     id: project.id,
     title: project.title,
+    progressLabel: project.progressLabel ?? '개발 진행률',
     phases,
     checkpoints,
     components: project.components ?? [],

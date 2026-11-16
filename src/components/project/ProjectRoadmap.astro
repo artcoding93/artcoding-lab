@@ -19,6 +19,7 @@ const lecturePercent = stats.lectures.total
   ? Math.round((stats.lectures.published / stats.lectures.total) * 1000) / 10
   : 0;
 const checkpointsAfter = (phaseId: string) => resolved.checkpoints.filter((c) => c.afterPhase === phaseId);
+const hasMilestones = resolved.phases.some((p) => p.milestones.length > 0);
 const publishedCount = (lectures: ResolvedLecture[]) => lectures.filter((l) => l.isPublic).length;
 ---
 
@@ -26,7 +27,7 @@ const publishedCount = (lectures: ResolvedLecture[]) => lectures.filter((l) => l
   <!-- 진행률: 개발 진행률과 강의 공개 진행률을 분리해 표시 -->
   <div class="pj-metrics">
     <section class="pj-metric" aria-labelledby={`${resolved.id}-dev`}>
-      <p class="pj-metric__eyebrow">솔버 개발 진행률</p>
+      <p class="pj-metric__eyebrow">{resolved.progressLabel}</p>
       <p class="pj-metric__value" id={`${resolved.id}-dev`}>
         <strong>{stats.phases.completed}</strong> / {stats.phases.total} Phase 완료
         <span class="pj-metric__pct">{stats.phases.percent}%</span>
@@ -34,7 +35,7 @@ const publishedCount = (lectures: ResolvedLecture[]) => lectures.filter((l) => l
       <div
         class="pj-bar"
         role="progressbar"
-        aria-label="솔버 개발 진행률"
+        aria-label={resolved.progressLabel}
         aria-valuemin="0"
         aria-valuemax="100"
         aria-valuenow={stats.phases.percent}
@@ -42,7 +43,8 @@ const publishedCount = (lectures: ResolvedLecture[]) => lectures.filter((l) => l
         <div class="pj-bar__fill pj-bar__fill--dev" style={`width: ${stats.phases.percent}%`}></div>
       </div>
       <p class="pj-metric__note">
-        완료된 Phase 기준 · 개발 중 {stats.phases.inProgress}개 · 세부 단계 {stats.steps.completed}/{stats.steps.total} 완료
+        완료된 Phase 기준 · 개발 중 {stats.phases.inProgress}개
+        {hasMilestones && ` · 세부 단계 ${stats.steps.completed}/${stats.steps.total} 완료`}
       </p>
     </section>
 
@@ -62,7 +64,7 @@ const publishedCount = (lectures: ResolvedLecture[]) => lectures.filter((l) => l
       >
         <div class="pj-bar__fill" style={`width: ${lecturePercent}%`}></div>
       </div>
-      <p class="pj-metric__note">Phase 1–6에 연결된 강의 중 사이트에 공개된 강의 (개발 진행률과 별개)</p>
+      <p class="pj-metric__note">Phase 1–{stats.phases.total}에 연결된 강의 중 사이트에 공개된 강의 (개발 진행률과 별개)</p>
     </section>
   </div>
 

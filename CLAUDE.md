@@ -68,13 +68,15 @@ src/
   data/numerical-roadmap.ts  # 수치해석 12 Part · 80강 목차 (강의 공개 상태의 기준)
   data/fem-roadmap.ts     # FEM 10 Part · 70강 목차
   data/fem-solver-project.ts  # FEM Solver Project Phase 1–6, 강의 연결(강의 id), 예정 컴포넌트
+  data/quantum-roadmap.ts # 양자컴퓨팅 8 Part · 48강 목차
+  data/quantum-simulator-project.ts  # Quantum Simulator Project Phase 1–6, 강의 연결, 예정 컴포넌트
   components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
-  components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, load-project.ts
+  components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
   content/docs/
     index.mdx             # 홈 (template: splash, 학습 분야 카드)
     numerical/            # index.mdx = 로드맵, root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
     fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project
-    quantum/              # /quantum/ 양자컴퓨팅 (index)
+    quantum/              # index.mdx = 양자컴퓨팅 로드맵, simulator-project/index.mdx = Quantum Simulator Project
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
@@ -96,15 +98,15 @@ public/                   # 정적 파일 (favicon.svg)
 
 ### 사이드바
 
-- **수치해석·FEM**: `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다. FEM은 `extraItems`로 'FEM Solver Project' 링크를 넣는다.
-- 양자컴퓨팅: 아직 `astro.config.mjs`의 `sidebar`에 직접 등록한다. 로드맵을 만들면 같은 방식으로 바꾼다.
+- 세 분야 모두 `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
+- 프로젝트 페이지는 `extraItems`로 넣는다: FEM은 'FEM Solver Project', 양자컴퓨팅은 'Quantum Simulator Project'.
 
-### 로드맵 강의 공개 절차 (수치해석·FEM 공통)
+### 로드맵 강의 공개 절차 (세 분야 공통)
 
 강의 목록과 공개 상태의 기준은 `src/data/<분야>-roadmap.ts`이다. 번호는 배열 순서로 자동 계산되고, URL은 `slug`로 고정된다.
 
 1. 해당 강의의 `slug`를 확인한다. 공개 후에는 slug를 바꾸지 않는다. 제목과 순서는 바꿔도 URL에 영향이 없다.
-2. `src/content/docs/<분야>/<slug>.mdx`에 강의를 작성한다(4절 표준 구성, FEM은 4절 'FEM 강의 설명 순서').
+2. `src/content/docs/<분야>/<slug>.mdx`에 강의를 작성한다(4절 표준 구성, FEM·양자컴퓨팅은 4절의 분야별 설명 순서).
 3. 강의가 완성되면 데이터에 `status: 'published'`를 추가한다. 임시 안내문이나 빈 템플릿은 공개하지 않는다.
 4. `npm run build`로 확인한다. 로드맵 링크, 진행률, 사이드바는 자동으로 반영된다.
    - 페이지가 없거나 `draft: true`인데 `published`로 표시하면 **빌드가 실패한다**.
@@ -112,20 +114,28 @@ public/                   # 정적 파일 (favicon.svg)
 - 새 강의를 추가할 때는 원하는 위치에 `{ id, title, en, slug }`를 넣는다. `id`와 `slug`는 중복될 수 없다(빌드 시 검사).
 - 페이지를 옮길 때는 `git mv`로 파일을 이동하고, 데이터의 `slug`를 수정하고, `astro.config.mjs`의 `redirects`에 이전 URL → 새 URL을 추가한다. 예: `/numerical/bisection` → `/numerical/root-finding/bisection/`
 - 새 상태(예: draft)는 `src/lib/roadmap.ts`의 `STATUSES`에 추가한다.
-- 난이도는 `intro`(입문)·`basic`·`intermediate`·`advanced`·`expert`·`research`이다. 로드맵별 라벨은 `levelLabels`로 바꾼다(FEM: research → '연구'). 필터에는 사용하는 난이도만 표시된다.
-- FEM 강의 `id`는 솔버 프로젝트의 연결 키이므로 **바꾸지 않는다**. 바꾸면 `fem-solver-project.ts`도 함께 수정해야 하고, 그렇지 않으면 빌드가 실패한다.
+- 난이도는 `intro`(입문)·`basic`·`intermediate`·`advanced`·`expert`·`research`이다. 로드맵별 라벨은 `levelLabels`로 바꾼다(FEM: research → '연구', 양자컴퓨팅: advanced → '프로젝트', expert → '확장'). 검색창 예시 검색어는 `searchExamples`로 지정한다. 필터에는 사용하는 난이도만 표시된다.
+- FEM·양자컴퓨팅 강의 `id`는 프로젝트의 연결 키이므로 **바꾸지 않는다**. 바꾸면 `fem-solver-project.ts`·`quantum-simulator-project.ts`도 함께 수정해야 하고, 그렇지 않으면 빌드가 실패한다.
 
-### FEM Solver Project 진행 절차
+### 단계별 프로젝트 진행 절차 (FEM Solver Project · Quantum Simulator Project)
 
-데이터는 `src/data/fem-solver-project.ts`, 페이지는 `/fem/solver-project/`이다. **솔버 개발 진행률(완료 Phase / 6)과 강의 공개 진행률은 별개 지표이다.**
+| 프로젝트 | 데이터 | 페이지 | 코드·컴포넌트 위치 |
+|---|---|---|---|
+| FEM Solver Project | `src/data/fem-solver-project.ts` | `/fem/solver-project/` | `public/code/fem/`, `src/components/fem/` |
+| Quantum Simulator Project | `src/data/quantum-simulator-project.ts` | `/quantum/simulator-project/` | `public/code/quantum/`, `src/components/quantum/` |
+
+**프로젝트 개발 진행률(완료 Phase / 6)과 강의 공개 진행률은 별개 지표이다.** 진행률 라벨은 `progressLabel`로 지정한다.
 
 1. Phase 작업을 시작하면 해당 Phase(또는 Phase 6의 마일스톤)를 `status: 'in-progress'`로 바꾼다.
 2. 결과물(코드·시각화)이 실제로 생기면 결과물에 `page`(콘텐츠 ID, 예: `fem/solver-project/phase-1`) 또는 `file`(public/ 기준 경로, 예: `code/fem/mesh.py`)을 지정하고 `status: 'completed'`로 바꾼다.
 3. 모든 결과물(과 마일스톤)이 completed일 때만 Phase를 `completed`로 바꾼다.
 - 검증(빌드 실패): 결과물 없이 완료 표시, page/file 경로 없음, 미완료 항목이 있는 Phase를 완료 표시, 로드맵에 없는 강의 id 연결.
-- '구조해석 확장'(checkpoints)은 Phase 5 뒤의 별도 마일스톤이며 진행률에 포함하지 않는다.
-- 예정 인터랙티브 컴포넌트(MeshViewer, ElementExplorer, AssemblyVisualizer, FEMSolverDemo, FieldViewer, DomainPartitionViewer)는 `components`에 계획만 있다. **실제로 구현하기 전에는 동작하는 것처럼 표현하지 않는다.** 구현하면 `src/components/fem/`에 만들고 status를 올린다.
-- 솔버 코드는 `public/code/fem/` 아래에 둔다(다운로드 가능). 페이지에는 핵심 코드만 싣는다.
+- `checkpoints`는 Phase 사이의 별도 마일스톤이며 진행률에 포함하지 않는다: FEM '구조해석 확장'(Phase 5 뒤), 양자 '텔레포테이션 확장'(Phase 6 뒤, 중간 측정·조건부 연산 필요).
+- 예정 인터랙티브 컴포넌트는 `components`에 계획만 있다. **실제로 구현하기 전에는 동작하는 것처럼 표현하지 않는다.** 구현하면 위 표의 컴포넌트 위치에 만들고 status를 올린다.
+  - FEM: MeshViewer, ElementExplorer, AssemblyVisualizer, FEMSolverDemo, FieldViewer, DomainPartitionViewer
+  - 양자: QubitStateViewer, QuantumGateExplorer, MeasurementVisualizer, QuantumCircuitEditor, BlochSphereViewer, QuantumAlgorithmDemo
+- 전체 코드는 `public/code/<분야>/` 아래에 둔다(다운로드 가능). 페이지에는 핵심 코드만 싣는다.
+- 양자 시뮬레이터 범위: 1~3큐비트 상태벡터, X·Y·Z·H·S·T·Rx·Ry·Rz·CNOT, 측정 확률·Shots, 블로흐 구면. 노이즈·오류 정정·하드웨어 시뮬레이션은 초기 범위에서 제외한다. 브라우저 JS 엔진은 Python 엔진과 같은 입력에 같은 결과(확률)를 내야 한다.
 
 ### 알려진 사항 (임의로 고치지 않음)
 
@@ -177,6 +187,25 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 - 엄밀성이 필요한 부분은 생략하지 않는다. 긴 유도는 Starlight `<details>` 등으로 '심화 설명'에 분리한다.
 - 수식은 그림, 코드, 인터랙티브 시각화와 연결한다.
 - 강의가 솔버 프로젝트의 Phase와 연결되어 있으면, 강의 끝에서 해당 Phase에서 무엇을 구현하는지 안내한다.
+
+### 양자컴퓨팅 강의 설명 순서
+
+대상은 양자역학·물리학 비전공자이다. 양자역학 전체가 아니라 양자컴퓨팅에 필요한 핵심 개념만 다루고, 수식보다 개념 이해와 시각화를 우선한다.
+
+1. 이번 강의에서 배울 내용
+2. 직관적인 개념 설명
+3. 실생활 또는 컴퓨팅 관점의 비유
+4. 핵심 수식과 의미
+5. Python 코드 실습
+6. 계산 결과 및 시각화
+7. 간단한 실험 또는 응용 예제
+8. 핵심 개념 정리
+9. 다음 강의와의 연결
+
+- 수식은 정확하게 쓰고, **비유가 실제 원리를 왜곡하지 않게** 한다(예: 중첩을 '0과 1을 동시에 계산한다'로만 설명하지 않는다). 비유의 한계를 함께 적는다.
+- 상태는 디랙 표기($\lvert\psi\rangle$)와 NumPy 배열을 함께 보여 준다. 큐비트 순서(어느 큐비트가 최상위 비트인지) 규칙을 분야 전체에서 하나로 정하고 일관되게 쓴다.
+- 코드는 NumPy 기반의 작은 예제로 작성한다. 초기 강의에서 Qiskit 등 양자 SDK 사용을 강제하지 않는다(SDK는 Part VIII에서 비교·검증용으로 다룬다).
+- 강의가 시뮬레이터 프로젝트의 Phase와 연결되어 있으면, 강의 끝에서 해당 Phase에서 무엇을 구현하는지 안내한다.
 
 ---
 

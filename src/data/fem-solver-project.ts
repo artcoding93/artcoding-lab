@@ -11,6 +11,7 @@ import { defineProject } from '../lib/project';
 export const femSolverProject = defineProject({
   id: 'fem-solver',
   title: 'FEM Solver Project',
+  progressLabel: '솔버 개발 진행률',
   phases: [
     {
       id: 'mesh-generation',

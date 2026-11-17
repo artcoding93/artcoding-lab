@@ -50,9 +50,15 @@ npm run preview   # 빌드 결과 미리보기
 ### 수식 (KaTeX)
 
 - 인라인은 `$...$`, 블록은 `$$...$$`로 쓴다. `.md`와 `.mdx` 모두 빌드할 때 KaTeX로 렌더링된다(브라우저 JS 불필요).
+- **블록 수식은 `$$`를 별도 줄에 둔다**(`$$` / 수식 / `$$` 세 줄). 한 줄에 `$$x^2$$`처럼 쓰면 인라인 수식으로 처리되어 가운데 정렬 블록이 되지 않는다.
 - KaTeX가 지원하는 LaTeX 명령만 사용한다. 잘못된 수식이 있어도 빌드는 실패하지 않고 빨간 글씨로 표시되므로, 빌드 후 해당 페이지를 직접 확인한다.
 - 본문의 금액이나 변수 표기 등에서 `$` 기호를 글자로 쓰려면 `\$`로 이스케이프한다.
 - `satteri-katex.mjs`는 `.md`에서는 `html` 노드를, `.mdx`에서는 `features.rawHtml: true`를 사용한다. `{ raw }` 방식은 Markdown을 다시 해석하면서 `\{`, `\_` 같은 수식 원문을 손상시키므로 쓰지 않는다.
+- `rawHtml: true`는 코드 블록의 언어·메타(` ```python title="…" `)를 지운다(satteri 0.10.5). `src/plugins/satteri-code-meta.mjs`가 이를 복원해 Expressive Code의 문법 강조·제목·복사 버튼이 동작한다. 이 플러그인을 제거하면 모든 코드가 plaintext로 표시된다.
+
+### 강조(굵게) 표기 주의
+
+- `**수치해석(Numerical Analysis)**은`처럼 닫는 `**` 앞이 문장부호이고 바로 뒤에 한글이 붙으면 CommonMark 규칙상 굵게 처리되지 않는다. 이런 경우 MDX에서는 `<strong>…</strong>`으로 쓴다. 빌드 후 페이지에 `**`가 남아 있지 않은지 확인한다.
 
 ---
 
@@ -63,6 +69,7 @@ astro.config.mjs          # Markdown 처리기(Sätteri+KaTeX), Starlight 설정
 src/
   content.config.ts       # docs 컬렉션 (docsLoader + docsSchema)
   plugins/satteri-katex.mjs  # 수식 렌더링 플러그인
+  plugins/satteri-code-meta.mjs  # rawHtml로 사라지는 코드 블록 언어·메타 복원 (문법 강조)
   lib/roadmap.ts          # 로드맵 공통 모델: 난이도·상태 정의, 공개 검증, 사이드바 생성
   lib/project.ts          # 단계별 프로젝트 공통 모델: Phase·결과물·마일스톤, 완료 검증, 개발 진행률
   data/numerical-roadmap.ts  # 수치해석 12 Part · 80강 목차 (강의 공개 상태의 기준)
@@ -78,10 +85,17 @@ src/
   components/research/    # ResearchOverview, ResearchRoadmap, PaperLibrary·PaperCard·PaperSelection,
                           #   AlgorithmReproduction, ExperimentPlan, ResearchNotebook, research.css(.rs- 접두사), load-research.ts
   components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
+  components/lecture/     # 강의 공통: LectureHeader(분야/Part/Lecture·난이도·시간), NextLecture(다음 강의·공개 상태),
+                          #   FlowSteps(세로 흐름도), ConceptCards·ConceptCard(개념 카드), load-lecture.ts
+  components/numerical/   # 수치해석 시각화: FunctionPlot(정적), RiemannSumExplorer, BisectionExplorer, ConceptIcon,
+                          #   render-*.ts(서버·브라우저 공용 SVG 생성), plot.css(.np- 접두사)
+  lib/numerical/          # 브라우저·빌드 공용 계산: functions.ts(함수 키), bisection.ts, riemann.ts (Python 결과와 일치 검증)
+  lib/plot/svg.ts         # SVG 그래프 공통: 좌표 변환, 곡선 path, 눈금
   components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
   content/docs/
     index.mdx             # 홈 (template: splash, 학습 분야 카드)
-    numerical/            # index.mdx = 로드맵, root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
+    numerical/            # index.mdx = 로드맵, fundamentals/introduction.mdx = 1강(공개),
+                          #   root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
     fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project
     quantum/              # index.mdx = 양자컴퓨팅 로드맵, simulator-project/index.mdx = Quantum Simulator Project
     optical/              # index.mdx = 광학 계측 로드맵, simulator-project/index.mdx = Optical Metrology Simulator Project
@@ -89,7 +103,8 @@ src/
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
-public/                   # 정적 파일 (favicon.svg)
+public/                   # 정적 파일 (favicon.svg), code/<분야>/ = 다운로드용 전체 코드
+lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md). 강의 본문의 기준이며 사이트 빌드에는 쓰지 않는다
 ```
 
 ### 새 파일 배치 규칙 (디렉터리가 없으면 처음 필요할 때 만든다)

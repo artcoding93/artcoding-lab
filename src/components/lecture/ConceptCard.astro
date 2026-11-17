@@ -1,0 +1,56 @@
+---
+// ConceptCards 안의 카드 하나 (<li>). figure slot에 그림, 기본 slot에 본문 문장을 넣는다.
+---
+
+<li class="concept-card">
+  {
+    Astro.slots.has('figure') && (
+      <div class="concept-card__figure" aria-hidden="true">
+        <slot name="figure" />
+      </div>
+    )
+  }
+  <div class="concept-card__body">
+    <slot />
+  </div>
+</li>
+
+<style>
+  .concept-card {
+    display: flex;
+    flex-direction: column;
+    margin: 0 !important;
+    padding: 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 12px;
+    background: var(--sl-color-bg);
+    overflow: hidden;
+  }
+  .concept-card__figure {
+    display: grid;
+    place-items: center;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--sl-color-gray-5);
+    background: color-mix(in srgb, var(--concept-accent) 7%, transparent);
+    color: var(--concept-accent);
+  }
+  :global(:root[data-theme='dark']) .concept-card__figure {
+    color: color-mix(in srgb, var(--concept-accent) 55%, white);
+  }
+  .concept-card__figure :global(svg) {
+    width: 100%;
+    max-width: 10rem;
+    height: auto;
+  }
+  .concept-card__body {
+    padding: 0.85rem 1rem 1rem;
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+  .concept-card__body :global(> :first-child) {
+    margin-top: 0;
+  }
+  .concept-card__body :global(> :last-child) {
+    margin-bottom: 0;
+  }
+</style>

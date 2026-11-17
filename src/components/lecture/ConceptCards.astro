@@ -1,0 +1,34 @@
+---
+// 개념 카드 목록 (<ul>). 각 항목은 ConceptCard로 넣는다.
+// 본문 문장은 MDX에서 그대로 쓰고(수식·강조 포함), 카드에는 그림만 덧붙인다.
+// 사용법 (MDX):
+//   <ConceptCards accent="#2563eb">
+//   <ConceptCard>
+//   <ConceptIcon slot="figure" name="roots" />
+//
+//   **비선형 방정식 …** 본문 문장
+//   </ConceptCard>
+//   </ConceptCards>
+interface Props {
+  accent?: string;
+  /** 접근성 라벨 */
+  label?: string;
+}
+
+const { accent = 'var(--sl-color-accent)', label } = Astro.props;
+---
+
+<ul class="concept-cards not-content" style={`--concept-accent: ${accent}`} aria-label={label}>
+  <slot />
+</ul>
+
+<style>
+  .concept-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0;
+    padding: 0;
+    list-style: none;
+  }
+</style>

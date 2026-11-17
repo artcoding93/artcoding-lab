@@ -1,0 +1,111 @@
+---
+// 정적 함수 그래프 (빌드 시 SVG 생성, 브라우저 JS 없음).
+// 곡선, x축, 선택적으로 구간 [a, b]와 x축 위의 표시점(중점·근 등)을 그린다.
+// 사용법 (MDX):
+//   <FunctionPlot fn="cubic" view={{ xMin: 0.8, xMax: 2.2, yMin: -3, yMax: 7 }} interval={[1, 2]}
+//     points={[{ x: 1.5, label: 'm = 1.5', kind: 'mid' }, { x: 1.5214, label: 'x ≈ 1.5214', kind: 'root' }]}
+//     caption="…" />
+import { getFunction } from '../../lib/numerical/functions';
+import { axesMarkup, createScale, curvePath, fmt } from '../../lib/plot/svg';
+import './plot.css';
+
+interface Point {
+  x: number;
+  label: string;
+  /** mid: 중점(곡선 위 점 포함), root: 근(x축 위 마름모), 생략 시 일반 점 */
+  kind?: 'mid' | 'root';
+}
+
+interface Props {
+  fn: string;
+  view: { xMin: number; xMax: number; yMin: number; yMax: number };
+  interval?: [number, number];
+  points?: Point[];
+  caption?: string;
+  /** 그림 설명 (스크린 리더용, 생략 시 caption) */
+  label?: string;
+}
+
+const { fn, view, interval, points = [], caption, label } = Astro.props;
+const func = getFunction(fn);
+const uid = `plot-${Math.random().toString(36).slice(2, 8)}`;
+const scale = createScale({ width: 480, height: 300, padding: { top: 14, right: 14, bottom: 30, left: 44 }, ...view });
+const { sx, sy, top, bottom, left, right } = scale;
+const axisY = view.yMin <= 0 && view.yMax >= 0 ? sy(0) : bottom;
+// 라벨이 겹치지 않도록 위아래로 번갈아 배치
+const placed = points.map((p, i) => ({ ...p, px: sx(p.x), labelY: i % 2 === 0 ? axisY - 14 : axisY + 24 }));
+const svg = [
+  `<defs><clipPath id="${uid}-clip"><rect x="${fmt(left)}" y="${fmt(top)}" width="${fmt(right - left)}" height="${fmt(bottom - top)}"/></clipPath></defs>`,
+  axesMarkup(scale),
+  interval
+    ? `<rect class="fp-interval" x="${fmt(sx(interval[0]))}" y="${fmt(top)}" width="${fmt(sx(interval[1]) - sx(interval[0]))}" height="${fmt(bottom - top)}"/>` +
+      interval.map((x) => `<line class="fp-edge" x1="${fmt(sx(x))}" x2="${fmt(sx(x))}" y1="${fmt(top)}" y2="${fmt(bottom)}"/>`).join('')
+    : '',
+  `<path class="plot-curve" clip-path="url(#${uid}-clip)" d="${curvePath(func.f, scale)}"/>`,
+  interval
+    ? interval
+        .map((x) => {
+          const y = func.f(x);
+          return `<circle class="${y < 0 ? 'fp-neg' : 'fp-pos'}" cx="${fmt(sx(x))}" cy="${fmt(sy(y))}" r="4.5"/>` +
+            `<text class="plot-label" x="${fmt(sx(x) + 8)}" y="${fmt(sy(y) + (y < 0 ? 16 : -8))}">f(${x}) = ${y}</text>`;
+        })
+        .join('')
+    : '',
+  placed
+    .map((p) => {
+      const marker =
+        p.kind === 'root'
+          ? `<path class="fp-root" d="M${fmt(p.px)},${fmt(axisY - 6)}L${fmt(p.px + 6)},${fmt(axisY)}L${fmt(p.px)},${fmt(axisY + 6)}L${fmt(p.px - 6)},${fmt(axisY)}Z"/>`
+          : p.kind === 'mid'
+            ? `<line class="fp-mid-line" x1="${fmt(p.px)}" x2="${fmt(p.px)}" y1="${fmt(axisY)}" y2="${fmt(sy(func.f(p.x)))}"/>` +
+              `<circle class="fp-mid" cx="${fmt(p.px)}" cy="${fmt(sy(func.f(p.x)))}" r="5"/><circle class="fp-mid" cx="${fmt(p.px)}" cy="${fmt(axisY)}" r="3.5"/>`
+            : `<circle class="fp-point" cx="${fmt(p.px)}" cy="${fmt(axisY)}" r="3.5"/>`;
+      return marker + `<text class="plot-label fp-${p.kind ?? 'point'}-label" x="${fmt(p.px)}" y="${fmt(p.labelY)}" text-anchor="middle">${p.label}</text>`;
+    })
+    .join(''),
+].join('');
+---
+
+<figure class="np not-content">
+  <div class="np__plot">
+    <svg viewBox="0 0 480 300" role="img" aria-label={label ?? caption ?? `y = ${func.label}의 그래프`} set:html={svg} />
+  </div>
+  {caption && <figcaption class="np__caption">{caption}</figcaption>}
+</figure>
+
+<style>
+  .np :global(.fp-interval) {
+    fill: color-mix(in srgb, var(--np-accent) 12%, transparent);
+  }
+  .np :global(.fp-edge) {
+    stroke: var(--np-accent);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+  }
+  .np :global(.fp-neg) {
+    fill: var(--np-neg);
+  }
+  .np :global(.fp-pos) {
+    fill: var(--np-pos);
+  }
+  .np :global(.fp-mid),
+  .np :global(.fp-point) {
+    fill: var(--np-mid);
+  }
+  .np :global(.fp-mid-line) {
+    stroke: var(--np-mid);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 3;
+  }
+  .np :global(.fp-mid-label) {
+    fill: var(--np-mid);
+  }
+  .np :global(.fp-root) {
+    fill: none;
+    stroke: var(--np-root);
+    stroke-width: 2;
+  }
+  .np :global(.fp-root-label) {
+    fill: var(--np-root);
+  }
+</style>

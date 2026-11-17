@@ -1,0 +1,238 @@
+---
+// 인터랙티브: 이분법의 수렴 과정 (반복 단계별 구간 · 중점 · 함수값 · 오차 상한)
+// 표시되는 구간은 해당 반복의 중점을 평가하기 '직전' 구간이다.
+// 계산: src/lib/numerical/bisection.ts (강의 Python 코드와 같은 순서·연산, 결과 일치 검증)
+// 사용법 (MDX):
+//   <BisectionExplorer fn="cubic" a={1} b={2} iterations={20} initial={1}
+//     view={{ xMin: 0.8, xMax: 2.2, yMin: -3, yMax: 7 }} />
+import { getFunction } from '../../lib/numerical/functions';
+import {
+  BISECTION_VIEW,
+  bisectionData,
+  bisectionSvg,
+  decisionText,
+  formatE,
+  formatF,
+  formatX,
+  rangeText,
+  type BisectionConfig,
+} from './render-bisection';
+import './plot.css';
+
+interface Props {
+  /** src/lib/numerical/functions.ts의 함수 키 */
+  fn: string;
+  a: number;
+  b: number;
+  /** 최대 반복 횟수 (슬라이더 상한) */
+  iterations?: number;
+  /** 처음 보여 줄 반복 번호 */
+  initial?: number;
+  /** 전체 보기의 그래프 범위 */
+  view: BisectionConfig['view'];
+  title?: string;
+}
+
+const { fn, a, b, iterations = 20, initial = 1, view, title = '이분법의 수렴 과정' } = Astro.props;
+const uid = `bisection-${Math.random().toString(36).slice(2, 8)}`;
+const config: BisectionConfig = { fn, a, b, iterations, view, clipId: `${uid}-clip` };
+const { steps, root } = bisectionData(config);
+if (steps.length < iterations) throw new Error(`[BisectionExplorer] ${steps.length}회에서 정확한 근을 찾아 반복이 끝났습니다. 다른 구간을 사용하세요.`);
+if (!(Number.isInteger(initial) && initial >= 1 && initial <= iterations)) throw new Error(`[BisectionExplorer] initial은 1~${iterations} 사이여야 합니다.`);
+const f = getFunction(fn);
+const step = steps[initial - 1];
+---
+
+<figure class="np not-content" data-bisection data-config={JSON.stringify(config)} data-initial={initial}>
+  <div class="np__head">
+    <p class="np__title">{title}</p>
+    <p class="np__subtitle">f(x) = {f.label}, 초기 구간 [{a}, {b}]</p>
+  </div>
+  <div class="np__controls np__controls--top">
+    <div class="np__buttons" role="group" aria-label="그래프 보기">
+      <button type="button" class="np__button" data-view="full" aria-pressed="true">전체 보기</button>
+      <button type="button" class="np__button" data-view="zoom" aria-pressed="false">현재 구간 확대</button>
+    </div>
+    <p class="bis-range" data-range>{rangeText(config, step, 'full')}</p>
+  </div>
+  <div class="np__plot">
+    <svg viewBox={`0 0 ${BISECTION_VIEW.width} ${BISECTION_VIEW.height}`} role="img" aria-labelledby={`${uid}-desc`} data-svg set:html={bisectionSvg(config, step, root, 'full')} />
+    <p id={`${uid}-desc`} class="sr-only" data-desc>반복 {initial}회: 구간 [{formatX(step.a)}, {formatX(step.b)}], 중점 {formatX(step.m)}</p>
+  </div>
+  <ul class="np__legend" aria-hidden="true">
+    <li><i class="bis-swatch-interval"></i>현재 구간 [a, b]</li>
+    <li><i class="bis-swatch-mid"></i>중점 m과 f(m)</li>
+    <li><i class="bis-swatch-neg"></i>f &lt; 0인 끝점</li>
+    <li><i class="bis-swatch-pos"></i>f &gt; 0인 끝점</li>
+    <li><i class="bis-swatch-root"></i>근 x* ≈ {root.toFixed(10)} (기준값)</li>
+  </ul>
+  <div class="np__controls">
+    <div class="np__slider">
+      <label for={`${uid}-k`}>반복 횟수</label>
+      <input id={`${uid}-k`} type="range" min="1" max={iterations} step="1" value={initial} data-k />
+      <output for={`${uid}-k`} data-k-out>{initial}</output>
+    </div>
+    <div class="np__buttons">
+      <button type="button" class="np__button" data-prev disabled={initial === 1}>← 이전</button>
+      <button type="button" class="np__button" data-next disabled={initial === iterations}>다음 →</button>
+      <button type="button" class="np__button" data-reset>초기화</button>
+    </div>
+  </div>
+  <dl class="np__readout" aria-live="polite">
+    <div class="bis-wide"><dt>현재 구간 [a, b] (중점 평가 직전)</dt><dd data-interval>[{formatX(step.a)}, {formatX(step.b)}]</dd></div>
+    <div><dt>중점 m = (a + b) / 2</dt><dd data-m>{formatX(step.m)}</dd></div>
+    <div><dt>함수값 f(m)</dt><dd data-fm>{formatF(step.fm)}</dd></div>
+    <div><dt>오차 상한 (b − a) / 2</dt><dd data-bound>{formatE(step.errorBound)}</dd></div>
+    <div><dt>실제 오차 |m − x*|</dt><dd data-actual>{formatE(Math.abs(step.m - root))}</dd></div>
+  </dl>
+  <p class="np__note" data-decision>{decisionText(f.f, step)}</p>
+</figure>
+
+<style>
+  .np__controls--top {
+    border-top: 0;
+    border-bottom: 1px solid var(--np-border);
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+  .bis-range {
+    margin: 0;
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+    color: var(--np-muted);
+    overflow-wrap: anywhere;
+  }
+  .np__readout .bis-wide {
+    grid-column: 1 / -1;
+  }
+  .np :global(.bis-interval) {
+    fill: color-mix(in srgb, var(--np-accent) 13%, transparent);
+  }
+  .np :global(.bis-edge) {
+    stroke: var(--np-accent);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+  }
+  .np :global(.bis-neg) {
+    fill: var(--np-neg);
+  }
+  .np :global(.bis-pos) {
+    fill: var(--np-pos);
+  }
+  .np :global(.bis-mid) {
+    fill: var(--np-mid);
+    stroke: var(--sl-color-bg);
+    stroke-width: 2;
+  }
+  .np :global(.bis-mid-axis) {
+    fill: var(--np-mid);
+  }
+  .np :global(.bis-mid-line) {
+    stroke: var(--np-mid);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 3;
+  }
+  .np :global(.bis-mid-label) {
+    fill: var(--np-mid);
+  }
+  .np :global(.bis-root) {
+    fill: none;
+    stroke: var(--np-root);
+    stroke-width: 2;
+  }
+  .bis-swatch-interval {
+    background: color-mix(in srgb, var(--np-accent) 13%, transparent);
+    box-shadow: inset 0 0 0 1px var(--np-accent);
+  }
+  .bis-swatch-mid {
+    background: var(--np-mid);
+    border-radius: 50% !important;
+  }
+  .bis-swatch-neg {
+    background: var(--np-neg);
+    border-radius: 50% !important;
+  }
+  .bis-swatch-pos {
+    background: var(--np-pos);
+    border-radius: 50% !important;
+  }
+  .bis-swatch-root {
+    box-shadow: inset 0 0 0 2px var(--np-root);
+    transform: rotate(45deg) scale(0.8);
+  }
+</style>
+
+<script>
+  import { getFunction } from '../../lib/numerical/functions';
+  import {
+    bisectionData,
+    bisectionSvg,
+    decisionText,
+    formatE,
+    formatF,
+    formatX,
+    rangeText,
+    type BisectionConfig,
+    type BisectionView,
+  } from './render-bisection';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-bisection]')) {
+    const config = JSON.parse(root.dataset.config!) as BisectionConfig;
+    const initial = Number(root.dataset.initial);
+    const f = getFunction(config.fn).f;
+    const { steps, root: xRoot } = bisectionData(config);
+    const $ = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const slider = $<HTMLInputElement>('[data-k]');
+    const prev = $<HTMLButtonElement>('[data-prev]');
+    const next = $<HTMLButtonElement>('[data-next]');
+    const viewButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-view]')];
+    let k = initial;
+    let view: BisectionView = 'full';
+
+    const render = () => {
+      k = Math.min(steps.length, Math.max(1, Math.round(k) || 1));
+      const step = steps[k - 1];
+      slider.value = String(k);
+      $('[data-k-out]').textContent = String(k);
+      prev.disabled = k === 1;
+      next.disabled = k === steps.length;
+      for (const b of viewButtons) b.setAttribute('aria-pressed', String(b.dataset.view === view));
+      $('[data-svg]').innerHTML = bisectionSvg(config, step, xRoot, view);
+      $('[data-range]').textContent = rangeText(config, step, view);
+      $('[data-desc]').textContent = `반복 ${k}회: 구간 [${formatX(step.a)}, ${formatX(step.b)}], 중점 ${formatX(step.m)}`;
+      $('[data-interval]').textContent = `[${formatX(step.a)}, ${formatX(step.b)}]`;
+      $('[data-m]').textContent = formatX(step.m);
+      $('[data-fm]').textContent = formatF(step.fm);
+      $('[data-bound]').textContent = formatE(step.errorBound);
+      $('[data-actual]').textContent = formatE(Math.abs(step.m - xRoot));
+      $('[data-decision]').textContent = decisionText(f, step);
+      root.dataset.k = String(k);
+      root.dataset.view = view;
+    };
+
+    slider.addEventListener('input', () => {
+      k = Number(slider.value);
+      render();
+    });
+    prev.addEventListener('click', () => {
+      k -= 1;
+      render();
+    });
+    next.addEventListener('click', () => {
+      k += 1;
+      render();
+    });
+    $('[data-reset]').addEventListener('click', () => {
+      k = initial;
+      view = 'full';
+      render();
+    });
+    for (const b of viewButtons) {
+      b.addEventListener('click', () => {
+        view = b.dataset.view as BisectionView;
+        render();
+      });
+    }
+    render();
+  }
+</script>

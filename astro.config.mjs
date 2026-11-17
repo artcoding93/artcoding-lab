@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { satteri } from '@astrojs/markdown-satteri';
 import { satteriKatex } from './src/plugins/satteri-katex.mjs';
+import { satteriCodeMetaKeep, satteriCodeMetaRestore } from './src/plugins/satteri-code-meta.mjs';
 import { roadmapSidebar } from './src/lib/roadmap.ts';
 import { numericalRoadmap } from './src/data/numerical-roadmap.ts';
 import { femRoadmap } from './src/data/fem-roadmap.ts';
@@ -22,7 +23,9 @@ export default defineConfig({
     processor: satteri({
       // rawHtml: KaTeX가 만든 HTML을 MDX에서도 손상 없이 요소로 변환하기 위해 필요
       features: { math: true, rawHtml: true },
-      mdastPlugins: [satteriKatex],
+      mdastPlugins: [satteriKatex, satteriCodeMetaKeep],
+      // rawHtml이 지우는 코드 블록 언어·메타를 복원 (Expressive Code 문법 강조·제목용)
+      hastPlugins: [satteriCodeMetaRestore],
     }),
   },
   integrations: [

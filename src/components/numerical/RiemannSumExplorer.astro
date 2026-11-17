@@ -1,0 +1,133 @@
+---
+// 인터랙티브: 오른쪽 끝점 직사각형으로 면적 근사 (수치적분의 기본 아이디어)
+// 슬라이더로 N을 바꾸면 그래프와 수치가 같은 N 상태에서 함께 갱신된다.
+// 계산: src/lib/numerical/riemann.ts (Python 검증 결과와 같은 연산)
+// 사용법 (MDX):
+//   <RiemannSumExplorer fn="square" a={0} b={1} exact={1/3} exactLabel="1/3" nMin={2} nMax={40} n={6}>
+//   (선택) 슬롯: 계산식 설명 — Markdown·KaTeX 사용 가능
+//   </RiemannSumExplorer>
+import { MAX_RIEMANN_RECTS } from '../../lib/numerical/riemann';
+import { getFunction } from '../../lib/numerical/functions';
+import { formatArea, formatSigned, riemannState, riemannSvg, RIEMANN_VIEW } from './render-riemann';
+import './plot.css';
+
+interface Props {
+  /** src/lib/numerical/functions.ts의 함수 키 */
+  fn: string;
+  a: number;
+  b: number;
+  /** 정확한 면적 (해석적 적분값) */
+  exact: number;
+  /** 정확한 면적 표시용 문자열 (예: '1/3') */
+  exactLabel?: string;
+  nMin?: number;
+  nMax?: number;
+  /** 초기 N */
+  n?: number;
+  title?: string;
+}
+
+const { fn, a, b, exact, exactLabel, nMin = 2, nMax = 40, n = 6, title = '직사각형을 이용한 면적 근사' } = Astro.props;
+if (!(Number.isInteger(nMin) && Number.isInteger(nMax) && nMin >= 1 && nMax <= MAX_RIEMANN_RECTS && nMin < nMax && n >= nMin && n <= nMax)) {
+  throw new Error(`[RiemannSumExplorer] N 범위가 잘못되었습니다: nMin=${nMin}, nMax=${nMax}, n=${n}`);
+}
+const label = getFunction(fn).label;
+const uid = `riemann-${Math.random().toString(36).slice(2, 8)}`;
+const config = { fn, a, b, exact, clipId: `${uid}-clip` };
+const { result, error } = riemannState(config, n);
+---
+
+<figure class="np not-content" data-riemann data-config={JSON.stringify(config)} data-initial={n}>
+  <div class="np__head">
+    <p class="np__title">{title}</p>
+    <p class="np__subtitle">f(x) = {label}, 구간 [{a}, {b}], 오른쪽 끝점</p>
+  </div>
+  <div class="np__plot">
+    <svg viewBox={`0 0 ${RIEMANN_VIEW.width} ${RIEMANN_VIEW.height}`} role="img" aria-labelledby={`${uid}-desc`} data-svg set:html={riemannSvg(config, n)} />
+    <p id={`${uid}-desc`} class="sr-only" data-desc>
+      f(x) = {label}의 그래프 아래를 오른쪽 끝점 높이의 직사각형 {n}개로 채운 그림
+    </p>
+  </div>
+  <ul class="np__legend" aria-hidden="true">
+    <li><i style="background: var(--sl-color-white)"></i>y = f(x)</li>
+    <li><i class="riemann-swatch"></i>직사각형 (높이 = 오른쪽 끝점의 함수값)</li>
+  </ul>
+  <div class="np__controls">
+    <div class="np__slider">
+      <label for={`${uid}-n`}>직사각형 개수 N</label>
+      <input id={`${uid}-n`} type="range" min={nMin} max={nMax} step="1" value={n} data-n />
+      <output for={`${uid}-n`} data-n-out>{n}</output>
+    </div>
+    <div class="np__buttons">
+      <button type="button" class="np__button" data-reset>초기화 (N = {n})</button>
+    </div>
+  </div>
+  <dl class="np__readout" aria-live="polite">
+    <div><dt>근사 면적 R<sub>N</sub></dt><dd data-area>{formatArea(result.area)}</dd></div>
+    <div><dt>정확한 면적{exactLabel && ` (${exactLabel})`}</dt><dd>{formatArea(exact)}</dd></div>
+    <div><dt>오차 R<sub>N</sub> − 정확한 면적</dt><dd data-error>{formatSigned(error)}</dd></div>
+  </dl>
+  {Astro.slots.has('default') && (
+    <figcaption class="np__caption">
+      <slot />
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .np :global(.riemann-rect) {
+    fill: color-mix(in srgb, var(--np-accent) 22%, transparent);
+    stroke: var(--np-accent);
+    stroke-width: 1;
+  }
+  .np :global(.riemann-dot) {
+    fill: var(--np-accent);
+  }
+  .riemann-swatch {
+    background: color-mix(in srgb, var(--np-accent) 22%, transparent);
+    box-shadow: inset 0 0 0 1px var(--np-accent);
+  }
+  .np__caption :global(.katex-display) {
+    margin: 0.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .np__caption :global(p) {
+    margin: 0.35rem 0;
+  }
+</style>
+
+<script>
+  import { formatArea, formatSigned, riemannState, riemannSvg, type RiemannConfig } from './render-riemann';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-riemann]')) {
+    const config = JSON.parse(root.dataset.config!) as RiemannConfig;
+    const initial = Number(root.dataset.initial);
+    const slider = root.querySelector<HTMLInputElement>('[data-n]')!;
+    const nOut = root.querySelector('[data-n-out]')!;
+    const svg = root.querySelector('[data-svg]')!;
+    const desc = root.querySelector('[data-desc]')!;
+    const areaOut = root.querySelector('[data-area]')!;
+    const errorOut = root.querySelector('[data-error]')!;
+    const min = Number(slider.min);
+    const max = Number(slider.max);
+
+    // 하나의 N 상태로 그래프와 수치를 함께 갱신한다
+    const render = (raw: number) => {
+      const n = Math.min(max, Math.max(min, Math.round(raw)));
+      if (!Number.isFinite(n)) return;
+      const { result, error } = riemannState(config, n);
+      slider.value = String(n);
+      nOut.textContent = String(n);
+      svg.innerHTML = riemannSvg(config, n);
+      desc.textContent = desc.textContent!.replace(/\d+개/, `${n}개`);
+      areaOut.textContent = formatArea(result.area);
+      errorOut.textContent = formatSigned(error);
+      root.dataset.n = String(n);
+    };
+
+    slider.addEventListener('input', () => render(Number(slider.value)));
+    root.querySelector('[data-reset]')!.addEventListener('click', () => render(initial));
+    render(initial);
+  }
+</script>

@@ -1,0 +1,118 @@
+---
+// 강의 상단 정보: 분야 / Part / Lecture 번호, 영문 제목, 난이도, 학습 시간 등
+// (국문 제목은 Starlight가 frontmatter title로 출력한다)
+// Part·번호·영문 제목·난이도는 로드맵 데이터에서 계산한다.
+// 사용법 (MDX):
+//   <LectureHeader roadmap={numericalRoadmap} lectureId="what-is-numerical-analysis" field="Numerical Analysis"
+//     duration="50~70분" prerequisites="함수, 기초 대수, Python 기초" environment="Python 3" accent="#2563eb" />
+import type { RoadmapDef } from '../../lib/roadmap';
+import { loadLecture, pad2 } from './load-lecture';
+
+interface Props {
+  roadmap: RoadmapDef;
+  lectureId: string;
+  /** 분야 영문 이름 (예: Numerical Analysis) */
+  field: string;
+  /** 예상 학습 시간 */
+  duration?: string;
+  prerequisites?: string;
+  environment?: string;
+  /** 분야 강조 색상 (CLAUDE.md 7절) */
+  accent?: string;
+}
+
+const { roadmap, lectureId, field, duration, prerequisites, environment, accent = 'var(--sl-color-accent)' } = Astro.props;
+const { part, partRoman, lecture, levelLabel } = await loadLecture(roadmap, lectureId);
+const roadmapHref = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${roadmap.basePath}/`;
+const meta = [
+  ['난이도', levelLabel],
+  ['예상 학습 시간', duration],
+  ['선수 지식', prerequisites],
+  ['실습 환경', environment],
+].filter((item): item is [string, string] => Boolean(item[1]));
+---
+
+<header class="lecture-header not-content" style={`--lecture-accent: ${accent}`}>
+  <p class="lecture-header__path">
+    <a href={roadmapHref}>{field}</a>
+    <span aria-hidden="true">/</span>
+    <span title={part.title}>Part {partRoman}</span>
+    <span aria-hidden="true">/</span>
+    <span>Lecture {pad2(lecture.number)}</span>
+  </p>
+  {lecture.en && <p class="lecture-header__en" lang="en">{lecture.en}</p>}
+  <dl class="lecture-header__meta">
+    {meta.map(([label, value]) => (
+      <div>
+        <dt>{label}</dt>
+        <dd>{value}</dd>
+      </div>
+    ))}
+  </dl>
+</header>
+
+<style>
+  .lecture-header {
+    margin: 0 0 1.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-left: 4px solid var(--lecture-accent);
+    border-radius: 12px;
+    background: var(--sl-color-bg-nav);
+  }
+  :global(:root[data-theme='light']) .lecture-header {
+    background: var(--sl-color-gray-7);
+  }
+  .lecture-header__path {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+  }
+  .lecture-header__path a {
+    color: var(--lecture-accent);
+    text-decoration: none;
+  }
+  .lecture-header__path a:hover {
+    text-decoration: underline;
+  }
+  :global(:root[data-theme='dark']) .lecture-header__path a {
+    color: color-mix(in srgb, var(--lecture-accent) 60%, white);
+  }
+  .lecture-header__en {
+    margin: 0.35rem 0 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .lecture-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+  }
+  .lecture-header__meta div {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .lecture-header__meta dt {
+    color: var(--sl-color-gray-3);
+  }
+  .lecture-header__meta dd {
+    margin: 0;
+    color: var(--sl-color-text);
+    font-weight: 500;
+  }
+  @media (max-width: 600px) {
+    .lecture-header {
+      padding: 0.85rem 1rem;
+    }
+    .lecture-header__meta {
+      flex-direction: column;
+    }
+  }
+</style>

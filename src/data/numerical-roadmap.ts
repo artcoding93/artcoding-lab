@@ -19,7 +19,7 @@ export const numericalRoadmap = defineRoadmap({
       title: '수치해석의 기초',
       level: 'basic',
       lectures: [
-        { id: 'what-is-numerical-analysis', title: '수치해석이란 무엇인가?', en: 'What Is Numerical Analysis?', slug: 'fundamentals/introduction' },
+        { id: 'what-is-numerical-analysis', title: '수치해석이란 무엇인가?', en: 'What Is Numerical Analysis?', slug: 'fundamentals/introduction', status: 'published' },
         { id: 'floating-point', title: '컴퓨터의 부동소수점 표현', en: 'Floating-Point Representation', slug: 'fundamentals/floating-point', keywords: ['IEEE 754', 'machine epsilon'] },
         { id: 'absolute-relative-error', title: '절대오차와 상대오차', en: 'Absolute and Relative Error', slug: 'fundamentals/absolute-relative-error' },
         { id: 'roundoff-truncation-error', title: '반올림오차와 절단오차', en: 'Round-off and Truncation Error', slug: 'fundamentals/roundoff-truncation-error' },

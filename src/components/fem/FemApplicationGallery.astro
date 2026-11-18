@@ -1,0 +1,473 @@
+---
+// FEM 적용 분야 개념도 2×2 (구조역학 · 열전달 · 전자기학 · 유체역학). 빌드할 때 SVG로 그리며 브라우저 JS는 없다.
+// 각 그림은 잘 알려진 해석해로 그린 개념도이며 FEM 계산 결과가 아니다(모델은 application-fields.ts 참고).
+// 색 구간은 CSS 클래스로 칠하므로 라이트·다크 모드마다 따로 고른 색을 쓴다.
+// 사용법 (MDX): <FemApplicationGallery />
+import {
+  arrowHead,
+  bandRects,
+  cantileverDeflection,
+  bandOf,
+  contourPath,
+  cylinderSpeed,
+  cylinderStream,
+  dipoleFieldLine,
+  dipolePotential,
+  plateTemperature,
+  polylinePath,
+  sampleGrid,
+  type Point,
+  type View,
+} from '../../lib/fem/application-fields';
+
+interface Props {
+  /** 패널 설명 문구 (분야 → 원고 표의 활용 설명) */
+  uses: { structure: string; heat: string; em: string; fluid: string };
+}
+
+const { uses } = Astro.props;
+
+const W = 320;
+const H = 200;
+const f2 = (v: number) => (Math.round(v * 100) / 100).toString();
+
+/** 물리 좌표 상자 → SVG 영역 (가로세로 비율 유지, 가운데 정렬) */
+function fit(box: { xMin: number; xMax: number; yMin: number; yMax: number }, area: { left: number; top: number; width: number; height: number }): View {
+  const scale = Math.min(area.width / (box.xMax - box.xMin), area.height / (box.yMax - box.yMin));
+  const ox = area.left + (area.width - scale * (box.xMax - box.xMin)) / 2;
+  const oy = area.top + (area.height - scale * (box.yMax - box.yMin)) / 2;
+  return { sx: (x) => ox + (x - box.xMin) * scale, sy: (y) => oy + (box.yMax - y) * scale };
+}
+
+// 색 구간 묶음. 격자 칸 채움(rect)은 crispEdges로 그려 칸 사이에 가는 틈이 보이지 않게 한다
+const groups = (bands: Map<number, string[]>, prefix: string, crisp = true) =>
+  [...bands.entries()]
+    .map(([band, shapes]) => `<g class="${prefix}-${band}"${crisp ? ' shape-rendering="crispEdges"' : ''}>${shapes.join('')}</g>`)
+    .join('');
+
+// ── 구조역학: 외팔보 처짐 ─────────────────────────────────
+const beam = (() => {
+  const x0 = 46;
+  const x1 = 286;
+  const yTop = 70;
+  const thickness = 16;
+  const tipDrop = 70; // 끝단 처짐을 그릴 때의 크기 (실제보다 과장)
+  const segments = 48;
+  const seqThresholds = [1, 2, 3, 4, 5, 6, 7].map((k) => k / 8);
+  const out: string[] = [];
+  // 변형 전 보 (점선 윤곽)
+  out.push(`<rect class="fa-ghost" x="${x0}" y="${yTop}" width="${x1 - x0}" height="${thickness}"/>`);
+  // 변형 후 보: 구간마다 처짐 크기의 색 구간으로 칠한다
+  const byBand = new Map<number, string[]>();
+  const top: Point[] = [];
+  for (let i = 0; i <= segments; i++) {
+    const s = i / segments;
+    top.push([x0 + (x1 - x0) * s, yTop + tipDrop * cantileverDeflection(s)]);
+  }
+  for (let i = 0; i < segments; i++) {
+    const vMid = cantileverDeflection((i + 0.5) / segments);
+    const band = bandOf(vMid, seqThresholds);
+    const [ax, ay] = top[i];
+    const [bx, by] = top[i + 1];
+    const quad = `<path d="M${f2(ax)},${f2(ay)}L${f2(bx + 0.4)},${f2(by)}L${f2(bx + 0.4)},${f2(by + thickness)}L${f2(ax)},${f2(ay + thickness)}Z"/>`;
+    if (!byBand.has(band)) byBand.set(band, []);
+    byBand.get(band)!.push(quad);
+  }
+  out.push(groups(byBand, 'fa-b', false));
+  const outline = `M${top.map(([x, y]) => `${f2(x)},${f2(y)}`).join('L')}L${[...top].reverse().map(([x, y]) => `${f2(x)},${f2(y + thickness)}`).join('L')}Z`;
+  out.push(`<path class="fa-outline" d="${outline}"/>`);
+  // 고정단 (벽과 빗금)
+  out.push(`<line class="fa-wall" x1="${x0}" y1="${yTop - 26}" x2="${x0}" y2="${yTop + thickness + 26}"/>`);
+  for (let k = 0; k < 7; k++) {
+    const y = yTop - 26 + k * 10;
+    out.push(`<line class="fa-hatch" x1="${x0}" y1="${y}" x2="${x0 - 10}" y2="${y + 10}"/>`);
+  }
+  // 하중 P (끝단, 아래 방향)
+  const [tx, ty] = top[segments];
+  out.push(`<line class="fa-load" x1="${f2(tx)}" y1="${f2(ty - 40)}" x2="${f2(tx)}" y2="${f2(ty - 6)}"/>`);
+  out.push(`<path class="fa-load-head" d="M${f2(tx)},${f2(ty - 1)}L${f2(tx - 5)},${f2(ty - 10)}L${f2(tx + 5)},${f2(ty - 10)}Z"/>`);
+  out.push(`<text class="fa-text" x="${f2(tx - 10)}" y="${f2(ty - 30)}" text-anchor="end">P</text>`);
+  out.push(`<text class="fa-small" x="${x0 + 6}" y="${yTop - 8}">변형 전</text>`);
+  out.push(`<text class="fa-small" x="${f2(tx - 4)}" y="${f2(ty + thickness + 18)}" text-anchor="end">변형 후 (과장)</text>`);
+  out.push(`<text class="fa-small" x="${x0 - 4}" y="${yTop + thickness + 42}" text-anchor="middle">고정</text>`);
+  return out.join('');
+})();
+
+// ── 열전달: 윗변을 가열한 판의 정상상태 온도 ─────────────────
+const heat = (() => {
+  const PW = 1.6;
+  const PH = 1;
+  const box = { xMin: 0, xMax: PW, yMin: 0, yMax: PH };
+  const view = fit(box, { left: 40, top: 26, width: 240, height: 150 });
+  const T = (x: number, y: number) => plateTemperature(x, y, PW, PH);
+  const thresholds = [1, 2, 3, 4, 5, 6, 7].map((k) => k / 8);
+  const out: string[] = [];
+  out.push(groups(bandRects(T, box, 128, 80, thresholds, view), 'fa-o'));
+  const grid = sampleGrid(T, 0, PW, 0.0005, PH - 0.0005, 128, 80);
+  out.push(`<path class="fa-contour" d="${thresholds.map((t) => contourPath(grid, t, view)).join('')}"/>`);
+  out.push(`<rect class="fa-outline" x="${f2(view.sx(0))}" y="${f2(view.sy(PH))}" width="${f2(view.sx(PW) - view.sx(0))}" height="${f2(view.sy(0) - view.sy(PH))}"/>`);
+  out.push(`<line class="fa-hot" x1="${f2(view.sx(0))}" y1="${f2(view.sy(PH))}" x2="${f2(view.sx(PW))}" y2="${f2(view.sy(PH))}"/>`);
+  out.push(`<text class="fa-text" x="${f2(view.sx(PW / 2))}" y="${f2(view.sy(PH) - 8)}" text-anchor="middle">T₁ (가열)</text>`);
+  out.push(`<text class="fa-text" x="${f2(view.sx(PW / 2))}" y="${f2(view.sy(0) + 17)}" text-anchor="middle">T₀</text>`);
+  out.push(`<text class="fa-text" x="${f2(view.sx(0) - 8)}" y="${f2(view.sy(PH / 2) + 5)}" text-anchor="end">T₀</text>`);
+  out.push(`<text class="fa-text" x="${f2(view.sx(PW) + 8)}" y="${f2(view.sy(PH / 2) + 5)}">T₀</text>`);
+  return out.join('');
+})();
+
+// ── 전자기학: 전기 쌍극자의 전위와 전기장선 ──────────────────
+const em = (() => {
+  const d = 0.7;
+  const box = { xMin: -2, xMax: 2, yMin: -1.2, yMax: 1.2 };
+  const view = fit(box, { left: 8, top: 8, width: 304, height: 184 });
+  const phi = (x: number, y: number) => dipolePotential(x, y, d);
+  const thresholds = [-2, -0.8, -0.3, -0.08, 0.08, 0.3, 0.8, 2];
+  const out: string[] = [];
+  out.push(`<defs><clipPath id="fa-em-clip"><rect x="${f2(view.sx(box.xMin))}" y="${f2(view.sy(box.yMax))}" width="${f2(view.sx(box.xMax) - view.sx(box.xMin))}" height="${f2(view.sy(box.yMin) - view.sy(box.yMax))}"/></clipPath></defs>`);
+  out.push(groups(bandRects(phi, box, 152, 92, thresholds, view), 'fa-d'));
+  const grid = sampleGrid((x, y) => Math.max(-50, Math.min(50, phi(x, y))), box.xMin, box.xMax, box.yMin, box.yMax, 152, 92);
+  out.push(`<path class="fa-contour fa-dashed" d="${thresholds.map((t) => contourPath(grid, t, view)).join('')}"/>`);
+  // 전기장선: +q 주위에서 출발해 −q로 들어가거나 영역 밖으로 나간다
+  const lines: string[] = [];
+  const heads: string[] = [];
+  const count = 14;
+  for (let k = 0; k < count; k++) {
+    const angle = (2 * Math.PI * (k + 0.5)) / count;
+    const pts = dipoleFieldLine([-d + 0.07 * Math.cos(angle), 0.07 * Math.sin(angle)], d, box);
+    lines.push(polylinePath(pts, view));
+    heads.push(arrowHead(pts, 0.5, view));
+  }
+  out.push(`<g clip-path="url(#fa-em-clip)"><path class="fa-line" d="${lines.join('')}"/><path class="fa-head" d="${heads.join('')}"/></g>`);
+  for (const [cx, sign] of [[-d, '+'], [d, '−']] as const) {
+    out.push(`<circle class="fa-charge" cx="${f2(view.sx(cx))}" cy="${f2(view.sy(0))}" r="11"/>`);
+    out.push(`<text class="fa-charge-sign" x="${f2(view.sx(cx))}" y="${f2(view.sy(0) + 3.5)}" text-anchor="middle">${sign}q</text>`);
+  }
+  out.push(`<rect class="fa-frame" x="${f2(view.sx(box.xMin))}" y="${f2(view.sy(box.yMax))}" width="${f2(view.sx(box.xMax) - view.sx(box.xMin))}" height="${f2(view.sy(box.yMin) - view.sy(box.yMax))}"/>`);
+  return out.join('');
+})();
+
+// ── 유체역학: 원기둥 주위 퍼텐셜 유동 ────────────────────────
+const fluid = (() => {
+  const a = 0.45;
+  const box = { xMin: -2.4, xMax: 2.4, yMin: -1.2, yMax: 1.2 };
+  const view = fit(box, { left: 8, top: 8, width: 304, height: 184 });
+  const thresholds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75];
+  const out: string[] = [];
+  out.push(groups(bandRects((x, y) => cylinderSpeed(x, y, a), box, 240, 120, thresholds, view), 'fa-b'));
+  // 유선: ψ = 일정. ψ = 0은 대칭축과 원기둥 표면이므로 축 위의 직선으로 따로 그린다
+  const grid = sampleGrid((x, y) => cylinderStream(x, y, a), box.xMin, box.xMax, box.yMin, box.yMax, 240, 120);
+  const levels = [0.08, 0.22, 0.42, 0.66, 0.92].flatMap((v) => [v, -v]);
+  const axis = `M${f2(view.sx(box.xMin))},${f2(view.sy(0))}L${f2(view.sx(-a))},${f2(view.sy(0))}M${f2(view.sx(a))},${f2(view.sy(0))}L${f2(view.sx(box.xMax))},${f2(view.sy(0))}`;
+  out.push(`<path class="fa-line" d="${axis}${levels.map((l) => contourPath(grid, l, view)).join('')}"/>`);
+  // 흐름 방향 화살촉 (왼쪽, 유선 위)
+  const heads: string[] = [];
+  for (const y of [0, 0.42, -0.42, 0.92, -0.92]) {
+    // 멀리 떨어진 곳(x = −2.1)에서 ψ ≈ y이므로 그 높이의 유선 위에 화살촉을 둔다
+    const x = -2.1;
+    const yy = y === 0 ? 0 : y / (1 - (a * a) / (x * x + y * y));
+    heads.push(arrowHead([[x - 0.1, yy], [x, yy]], 1, view, 6));
+  }
+  out.push(`<path class="fa-head" d="${heads.join('')}"/>`);
+  out.push(`<circle class="fa-body" cx="${f2(view.sx(0))}" cy="${f2(view.sy(0))}" r="${f2(view.sx(a) - view.sx(0))}"/>`);
+  out.push(`<text class="fa-text fa-on-band" x="${f2(view.sx(-2.25))}" y="${f2(view.sy(1.02))}">U →</text>`);
+  out.push(`<rect class="fa-frame" x="${f2(view.sx(box.xMin))}" y="${f2(view.sy(box.yMax))}" width="${f2(view.sx(box.xMax) - view.sx(box.xMin))}" height="${f2(view.sy(box.yMin) - view.sy(box.yMax))}"/>`);
+  return out.join('');
+})();
+
+const panels = [
+  {
+    key: 'structure',
+    title: '구조역학',
+    use: uses.structure,
+    svg: beam,
+    aria: '구조역학 개념도: 왼쪽 끝이 고정된 외팔보의 오른쪽 끝에 하중 P가 아래로 작용해 보가 휘어진 모습. 고정단에서 끝단으로 갈수록 처짐이 커진다.',
+    model: '끝에 집중하중을 받는 외팔보(오일러–베르누이 보 이론)의 처짐 해석해',
+    shows: '색 = 처짐(변위) 크기, 점선 = 변형 전 형상',
+    ramp: { prefix: 'fa-b', count: 8, min: '0', max: '최대 처짐' },
+  },
+  {
+    key: 'heat',
+    title: '열전달',
+    use: uses.heat,
+    svg: heat,
+    aria: '열전달 개념도: 윗변을 T₁로 가열하고 나머지 세 변을 T₀로 유지한 판의 정상상태 온도 분포. 윗변에 가까울수록 온도가 높고, 등온선이 윗변과 나란히 놓인다.',
+    model: '직사각형 판의 정상상태 열전도(라플라스 방정식) 푸리에 급수해',
+    shows: '색 = 온도, 선 = 등온선',
+    ramp: { prefix: 'fa-o', count: 8, min: 'T₀', max: 'T₁' },
+  },
+  {
+    key: 'em',
+    title: '전자기학',
+    use: uses.em,
+    svg: em,
+    aria: '전자기학 개념도: 양전하 +q와 음전하 −q가 만드는 전위 분포와 전기장선. 전기장선은 +q에서 나와 −q로 들어가고, 점선 등전위선은 전기장선과 수직으로 만난다.',
+    model: '같은 크기의 양·음 점전하 한 쌍(전기 쌍극자)의 전위 해석해',
+    shows: '색 = 전위, 실선 화살표 = 전기장선, 점선 = 등전위선',
+    ramp: { prefix: 'fa-d', count: 9, min: '− 전위', max: '+ 전위' },
+  },
+  {
+    key: 'fluid',
+    title: '유체역학',
+    use: uses.fluid,
+    svg: fluid,
+    aria: '유체역학 개념도: 왼쪽에서 오른쪽으로 흐르는 균일 흐름 속 원기둥 주위의 유선과 유속 크기. 원기둥 앞뒤의 정체점에서 유속이 0이고, 원기둥 위아래에서 가장 빠르다.',
+    model: '균일 흐름 속 원기둥 주위의 비점성·비압축성 퍼텐셜 유동 해석해',
+    shows: '색 = 유속 크기, 선 = 유선, U = 상류 유속',
+    ramp: { prefix: 'fa-b', count: 8, min: '0', max: '2U' },
+  },
+];
+---
+
+<figure class="fa not-content" aria-label="FEM 적용 분야 개념도: 구조역학, 열전달, 전자기학, 유체역학">
+  <ul class="fa__grid">
+    {panels.map((panel) => (
+      <li class="fa__panel">
+        <p class="fa__head">
+          <strong>{panel.title}</strong>
+          <span class="fa__use">{panel.use}</span>
+        </p>
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={panel.aria} set:html={panel.svg} />
+        <div class="fa__legend">
+          <span>{panel.ramp.min}</span>
+          <span class="fa__ramp" aria-hidden="true">
+            {Array.from({ length: panel.ramp.count }, (_, i) => <i class={`${panel.ramp.prefix}-${i}`} />)}
+          </span>
+          <span>{panel.ramp.max}</span>
+        </div>
+        <p class="fa__note">
+          <span class="fa__tag">개념도</span>
+          {panel.shows}
+          <br />
+          모델: {panel.model}
+        </p>
+      </li>
+    ))}
+  </ul>
+  <figcaption>
+    네 그림은 잘 알려진 해석해로 그린 <strong>개념도</strong>이며, 실제 FEM 계산 결과가 아닙니다. 색은 각 그림 안에서의 상대적인 크기만 나타냅니다.
+  </figcaption>
+</figure>
+
+<style>
+  .fa {
+    /* 순차 색 구간 (낮음 → 높음): 파랑 · 주황, 발산 색 구간: 파랑 ← 회색 → 빨강 */
+    --b0: #cde2fb; --b1: #9ec5f4; --b2: #6da7ec; --b3: #3987e5;
+    --b4: #2a78d6; --b5: #256abf; --b6: #184f95; --b7: #0d366b;
+    --o0: #fde4cf; --o1: #fbc79e; --o2: #f8a66b; --o3: #f2843f;
+    --o4: #e0661f; --o5: #c24e12; --o6: #9a3a0c; --o7: #6e2908;
+    --d0: #1c5cab; --d1: #3987e5; --d2: #86b6ef; --d3: #cde2fb; --d4: #f0efec;
+    --d5: #f9d0c8; --d6: #f09a8a; --d7: #dd5a48; --d8: #a8321f;
+    --fa-ink: #1f2937;
+    --fa-halo: rgba(255, 255, 255, 0.75);
+    --fa-body: #9ca3af;
+    margin: 1.5rem 0;
+  }
+  :global(:root[data-theme='dark']) .fa {
+    /* 어두운 배경에서는 낮은 값이 배경 쪽(어둡게)으로 물러나도록 따로 고른 단계 */
+    --b0: #0f2d55; --b1: #133f78; --b2: #184f95; --b3: #1c5cab;
+    --b4: #2a78d6; --b5: #3987e5; --b6: #6da7ec; --b7: #b7d3f6;
+    --o0: #3d1d0a; --o1: #5c2a0b; --o2: #84390c; --o3: #ad4a10;
+    --o4: #d35f18; --o5: #ee7c34; --o6: #f8a66b; --o7: #fdd3b0;
+    --d0: #9ec5f4; --d1: #5598e7; --d2: #2a5ea8; --d3: #1f3f6e; --d4: #383835;
+    --d5: #6a2a20; --d6: #a8402f; --d7: #e0705c; --d8: #f7b3a6;
+    --fa-ink: #f3f4f6;
+    --fa-halo: rgba(0, 0, 0, 0.6);
+    --fa-body: #6b7280;
+  }
+  .fa__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fa__panel {
+    margin: 0;
+    padding: 0.75rem 0.85rem 0.85rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 12px;
+    background: var(--sl-color-bg);
+  }
+  .fa__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.6rem;
+    margin: 0 0 0.5rem;
+  }
+  .fa__head strong {
+    color: var(--sl-color-white);
+  }
+  .fa__use {
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-2);
+  }
+  .fa__panel svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: var(--sl-font-system);
+  }
+  .fa__legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-2);
+  }
+  .fa__ramp {
+    display: flex;
+    flex: 1;
+    height: 0.65rem;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 3px;
+  }
+  .fa__ramp i {
+    flex: 1;
+  }
+  .fa__note {
+    margin: 0.45rem 0 0;
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--sl-color-gray-3);
+    word-break: keep-all;
+  }
+  .fa__tag {
+    display: inline-block;
+    margin-right: 0.35rem;
+    padding: 0 0.4rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+  }
+  .fa figcaption {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.65;
+    color: var(--sl-color-gray-2);
+    word-break: keep-all;
+  }
+
+  /* SVG 내부 (set:html로 넣으므로 :global) */
+  .fa :global(.fa-b-0), .fa :global(i.fa-b-0) { fill: var(--b0); background: var(--b0); }
+  .fa :global(.fa-b-1), .fa :global(i.fa-b-1) { fill: var(--b1); background: var(--b1); }
+  .fa :global(.fa-b-2), .fa :global(i.fa-b-2) { fill: var(--b2); background: var(--b2); }
+  .fa :global(.fa-b-3), .fa :global(i.fa-b-3) { fill: var(--b3); background: var(--b3); }
+  .fa :global(.fa-b-4), .fa :global(i.fa-b-4) { fill: var(--b4); background: var(--b4); }
+  .fa :global(.fa-b-5), .fa :global(i.fa-b-5) { fill: var(--b5); background: var(--b5); }
+  .fa :global(.fa-b-6), .fa :global(i.fa-b-6) { fill: var(--b6); background: var(--b6); }
+  .fa :global(.fa-b-7), .fa :global(i.fa-b-7) { fill: var(--b7); background: var(--b7); }
+  .fa :global(.fa-o-0), .fa :global(i.fa-o-0) { fill: var(--o0); background: var(--o0); }
+  .fa :global(.fa-o-1), .fa :global(i.fa-o-1) { fill: var(--o1); background: var(--o1); }
+  .fa :global(.fa-o-2), .fa :global(i.fa-o-2) { fill: var(--o2); background: var(--o2); }
+  .fa :global(.fa-o-3), .fa :global(i.fa-o-3) { fill: var(--o3); background: var(--o3); }
+  .fa :global(.fa-o-4), .fa :global(i.fa-o-4) { fill: var(--o4); background: var(--o4); }
+  .fa :global(.fa-o-5), .fa :global(i.fa-o-5) { fill: var(--o5); background: var(--o5); }
+  .fa :global(.fa-o-6), .fa :global(i.fa-o-6) { fill: var(--o6); background: var(--o6); }
+  .fa :global(.fa-o-7), .fa :global(i.fa-o-7) { fill: var(--o7); background: var(--o7); }
+  .fa :global(.fa-d-0), .fa :global(i.fa-d-0) { fill: var(--d0); background: var(--d0); }
+  .fa :global(.fa-d-1), .fa :global(i.fa-d-1) { fill: var(--d1); background: var(--d1); }
+  .fa :global(.fa-d-2), .fa :global(i.fa-d-2) { fill: var(--d2); background: var(--d2); }
+  .fa :global(.fa-d-3), .fa :global(i.fa-d-3) { fill: var(--d3); background: var(--d3); }
+  .fa :global(.fa-d-4), .fa :global(i.fa-d-4) { fill: var(--d4); background: var(--d4); }
+  .fa :global(.fa-d-5), .fa :global(i.fa-d-5) { fill: var(--d5); background: var(--d5); }
+  .fa :global(.fa-d-6), .fa :global(i.fa-d-6) { fill: var(--d6); background: var(--d6); }
+  .fa :global(.fa-d-7), .fa :global(i.fa-d-7) { fill: var(--d7); background: var(--d7); }
+  .fa :global(.fa-d-8), .fa :global(i.fa-d-8) { fill: var(--d8); background: var(--d8); }
+
+  .fa :global(.fa-ghost) {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.2;
+    stroke-dasharray: 4 3;
+  }
+  .fa :global(.fa-outline) {
+    fill: none;
+    stroke: var(--sl-color-white);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+  .fa :global(.fa-frame) {
+    fill: none;
+    stroke: var(--sl-color-gray-4);
+    stroke-width: 1;
+  }
+  .fa :global(.fa-wall),
+  .fa :global(.fa-hatch) {
+    stroke: var(--sl-color-gray-2);
+    stroke-width: 2.5;
+  }
+  .fa :global(.fa-hatch) {
+    stroke-width: 1;
+  }
+  .fa :global(.fa-load) {
+    stroke: var(--sl-color-white);
+    stroke-width: 2;
+  }
+  .fa :global(.fa-load-head) {
+    fill: var(--sl-color-white);
+  }
+  .fa :global(.fa-hot) {
+    stroke: var(--sl-color-white);
+    stroke-width: 3.5;
+  }
+  .fa :global(.fa-contour) {
+    fill: none;
+    stroke: var(--fa-ink);
+    stroke-opacity: 0.55;
+    stroke-width: 0.9;
+    stroke-linecap: round;
+  }
+  .fa :global(.fa-dashed) {
+    stroke-dasharray: 3 3;
+  }
+  .fa :global(.fa-line) {
+    fill: none;
+    stroke: var(--fa-ink);
+    stroke-width: 1.1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .fa :global(.fa-head) {
+    fill: var(--fa-ink);
+  }
+  .fa :global(.fa-charge) {
+    fill: var(--sl-color-bg);
+    stroke: var(--fa-ink);
+    stroke-width: 1.5;
+  }
+  .fa :global(.fa-charge-sign) {
+    fill: var(--fa-ink);
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .fa :global(.fa-body) {
+    fill: var(--fa-body);
+    stroke: var(--fa-ink);
+    stroke-width: 1.2;
+  }
+  .fa :global(.fa-text) {
+    fill: var(--sl-color-white);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .fa :global(.fa-on-band) {
+    fill: var(--fa-ink);
+    paint-order: stroke;
+    stroke: var(--fa-halo);
+    stroke-width: 3px;
+  }
+  .fa :global(.fa-small) {
+    fill: var(--sl-color-gray-2);
+    font-size: 11px;
+  }
+  @media (max-width: 600px) {
+    .fa__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

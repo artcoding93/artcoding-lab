@@ -18,7 +18,7 @@ export const femRoadmap = defineRoadmap({
       title: 'FEM을 직관적으로 이해하기',
       level: 'intro',
       lectures: [
-        { id: 'what-fem-solves', title: 'FEM은 어떤 문제를 해결하는가?', en: 'What Problems Does FEM Solve?', slug: 'intuition/what-fem-solves', keywords: ['유한요소법', 'finite element method'] },
+        { id: 'what-fem-solves', title: 'FEM은 어떤 문제를 해결하는가?', en: 'What Problems Does FEM Solve?', slug: 'intuition/what-fem-solves', keywords: ['유한요소법', 'finite element method'], status: 'published' },
         { id: 'discretization', title: '연속적인 세계를 이산화한다는 의미', en: 'What It Means to Discretize a Continuum', slug: 'intuition/discretization', keywords: ['이산화'] },
         { id: 'why-mesh', title: '메시(Mesh)는 왜 필요한가?', en: 'Why Do We Need a Mesh?', slug: 'intuition/why-mesh', keywords: ['격자'] },
         { id: 'nodes-elements', title: '절점(Node)과 요소(Element)의 관계', en: 'Nodes and Elements', slug: 'intuition/nodes-elements', keywords: ['노드'] },

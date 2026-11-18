@@ -86,17 +86,20 @@ src/
                           #   AlgorithmReproduction, ExperimentPlan, ResearchNotebook, research.css(.rs- 접두사), load-research.ts
   components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
   components/lecture/     # 강의 공통: LectureHeader(분야/Part/Lecture·난이도·시간), NextLecture(다음 강의·공개 상태),
-                          #   FlowSteps(세로 흐름도), ConceptCards·ConceptCard(개념 카드), load-lecture.ts
+                          #   FlowSteps(세로 흐름도, 단계별 detail 선택), ConceptCards·ConceptCard(개념 카드), load-lecture.ts
   components/numerical/   # 수치해석 시각화: FunctionPlot(정적), RiemannSumExplorer, BisectionExplorer, ConceptIcon,
                           #   render-*.ts(서버·브라우저 공용 SVG 생성), plot.css(.np- 접두사)
   lib/numerical/          # 브라우저·빌드 공용 계산: functions.ts(함수 키), bisection.ts, riemann.ts (Python 결과와 일치 검증)
   lib/plot/svg.ts         # SVG 그래프 공통: 좌표 변환, 곡선 path, 눈금
+  components/fem/         # FEM 강의 그림: PlateMeshComparison(연속체·메시 비교), FemApplicationGallery(적용 분야 해석해 개념도 2×2)
+  lib/fem/                # 빌드 시점 계산: plate-with-hole-mesh.ts(구멍 있는 판 삼각형 메시), application-fields.ts(해석해 모델·등치선)
   components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
   content/docs/
     index.mdx             # 홈 (template: splash, 학습 분야 카드)
     numerical/            # index.mdx = 로드맵, fundamentals/introduction.mdx = 1강(공개),
                           #   root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
-    fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project
+    fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project,
+                          #   intuition/what-fem-solves.mdx = 1강(공개)
     quantum/              # index.mdx = 양자컴퓨팅 로드맵, simulator-project/index.mdx = Quantum Simulator Project
     optical/              # index.mdx = 광학 계측 로드맵, simulator-project/index.mdx = Optical Metrology Simulator Project
     mesh-generation/      # index(메인), roadmap, papers/(목록·리뷰), algorithms/, experiments/(목록·보고서), notebook/(목록·노트), frontier
@@ -104,7 +107,7 @@ src/
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
 public/                   # 정적 파일 (favicon.svg), code/<분야>/ = 다운로드용 전체 코드
-lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md). 강의 본문의 기준이며 사이트 빌드에는 쓰지 않는다
+lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md, fem/lecture-01.md). 강의 본문의 기준이며 사이트 빌드에는 쓰지 않는다
 ```
 
 ### 새 파일 배치 규칙 (디렉터리가 없으면 처음 필요할 때 만든다)

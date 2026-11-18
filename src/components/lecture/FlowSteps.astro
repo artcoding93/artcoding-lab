@@ -1,9 +1,12 @@
 ---
 // 세로 흐름도: 단계 목록을 화살표로 이어 보여 준다.
 // 사용법 (MDX): <FlowSteps label="…" steps={[{ title: '현실의 문제', en: 'Problem' }, …]} />
+//   detail을 주면 제목 아래 줄에 단계의 핵심 내용을 보여 준다: { title: '물리적 문제 정의', detail: '형상 · 재료 · …' }
 interface Step {
   title: string;
   en?: string;
+  /** 단계의 핵심 내용 (제목 아래 줄) */
+  detail?: string;
 }
 
 interface Props {
@@ -24,6 +27,7 @@ const { steps, label, accent = 'var(--sl-color-accent)' } = Astro.props;
         <span class="flow__text">
           <strong>{step.title}</strong>
           {step.en && <span lang="en">{step.en}</span>}
+          {step.detail && <span class="flow__detail">{step.detail}</span>}
         </span>
       </li>
     ))}
@@ -101,5 +105,10 @@ const { steps, label, accent = 'var(--sl-color-accent)' } = Astro.props;
   .flow__text span {
     font-size: 0.85rem;
     color: var(--sl-color-gray-3);
+  }
+  .flow__text .flow__detail {
+    flex-basis: 100%;
+    color: var(--sl-color-gray-2);
+    word-break: keep-all;
   }
 </style>

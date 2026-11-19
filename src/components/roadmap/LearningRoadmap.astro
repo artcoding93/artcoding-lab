@@ -2,6 +2,7 @@
 // 학습 로드맵: 공개 현황 · 검색 · 난이도 필터 · Part 접기/펼치기
 // 사용법 (MDX): <LearningRoadmap roadmap={numericalRoadmap} />
 // FEM·양자컴퓨팅도 같은 형식의 데이터(src/lib/roadmap.ts의 RoadmapDef)만 만들면 그대로 재사용할 수 있다.
+// Part 설명(summary)·강의 유형(type)·학습 목표(goal)는 데이터에 있을 때만 표시한다(현재 양자컴퓨팅만 사용).
 import { getCollection } from 'astro:content';
 import {
   STATUSES,
@@ -129,6 +130,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
             <span class="rm-part__heading">
               <span class="rm-part__num">PART {part.numeral}</span>
               <span class="rm-part__title">{part.title}</span>
+              {part.summary && <span class="rm-part__desc">{part.summary}</span>}
             </span>
             <span class="rm-part__meta">
               <span class="rm-level" data-level={part.level}>
@@ -146,13 +148,39 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
           <ol class="rm-lectures">
             {part.lectures.map((lecture) => {
-              const search = [lecture.title, lecture.en ?? '', ...lecture.keywords].join(' ');
+              const search = [
+                lecture.title,
+                lecture.en ?? '',
+                ...lecture.keywords,
+                ...lecture.types.map((t) => t.label),
+                ...(lecture.goal ? [lecture.goal] : []),
+              ].join(' ');
               const inner = (
                 <Fragment>
                   <span class="rm-lecture__num">{pad(lecture.number)}</span>
                   <span class="rm-lecture__text">
                     <span class="rm-lecture__title">{lecture.title}</span>
                     {lecture.en && <span class="rm-lecture__en">{lecture.en}</span>}
+                    {(lecture.types.length > 0 || lecture.goal) && (
+                      <span class="rm-lecture__meta">
+                        {lecture.types.length > 0 && (
+                          <span class="rm-types">
+                            <span class="rm-sr-only">{`강의 유형: ${lecture.types.map((t) => t.label).join(', ')}.`}</span>
+                            {lecture.types.map((t) => (
+                              <span class="rm-type" data-type={t.id} aria-hidden="true">
+                                {t.id} {t.label}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                        {lecture.goal && (
+                          <span class="rm-lecture__goal">
+                            <span class="rm-sr-only">학습 목표: </span>
+                            {lecture.goal}
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </span>
                   {lecture.level !== part.level && (
                     <span class="rm-level rm-level--sm" data-level={lecture.level}>
@@ -574,6 +602,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
     color: var(--sl-color-white);
     word-break: keep-all;
   }
+  .rm-part__desc {
+    margin-top: 0.2rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--rm-muted);
+    word-break: keep-all;
+  }
   .rm-part__meta {
     display: flex;
     flex-wrap: wrap;
@@ -679,6 +714,36 @@ const pad = (n: number) => String(n).padStart(2, '0');
     line-height: 1.4;
     color: var(--rm-muted);
   }
+  .rm-lecture__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.5rem;
+    margin-top: 0.3rem;
+  }
+  .rm-types {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .rm-type {
+    padding: 0.02rem 0.4rem;
+    border: 1px solid var(--rm-border);
+    border-radius: 5px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    color: var(--sl-color-gray-2);
+  }
+  .rm-lecture__goal {
+    flex: 1 1 14rem;
+    min-width: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--rm-muted);
+    word-break: keep-all;
+  }
   .rm-badge {
     padding: 0.12rem 0.5rem;
     border-radius: 6px;
@@ -770,6 +835,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
     }
     .rm-lecture .rm-level--sm {
       display: none;
+    }
+    .rm-part__desc {
+      font-size: 0.78rem;
+    }
+    .rm-lecture__goal {
+      flex-basis: 100%;
     }
   }
 

@@ -43,12 +43,20 @@ export interface LectureDef {
   level?: LevelId;
   /** 추가 검색어 (약어, 다른 표기 등). */
   keywords?: string[];
+  /** 강의 유형 ID 목록 (RoadmapDef.typeLabels의 키, 예: ['A', 'C']). 지정한 로드맵에서만 표시된다. */
+  type?: string[];
+  /** 한 줄 학습 목표. 지정하면 로드맵 목록에 표시되고 검색 대상이 된다. */
+  goal?: string;
+  /** 계획 단계의 시각화 후보. 구현 전이므로 화면에 표시하지 않는다(기록용). */
+  visuals?: string[];
 }
 
 export interface PartDef {
   id: string;
   title: string;
   level: LevelId;
+  /** Part 설명 한두 문장. 지정하면 Part 제목 아래에 표시된다. */
+  summary?: string;
   lectures: LectureDef[];
 }
 
@@ -61,6 +69,8 @@ export interface RoadmapDef {
   levelLabels?: Partial<Record<LevelId, string>>;
   /** 검색창 안내 문구에 보여 줄 예시 검색어 (기본: 뉴턴, Spline) */
   searchExamples?: string[];
+  /** 강의 유형 라벨 (예: { A: '개념', B: '수학', C: '시뮬레이션' }). 강의의 type은 이 키만 쓸 수 있다. */
+  typeLabels?: Record<string, string>;
   parts: PartDef[];
 }
 
@@ -87,6 +97,9 @@ export interface ResolvedLecture {
   isPublic: boolean;
   /** 공개 강의에만 존재 */
   href?: string;
+  /** 강의 유형 (데이터에 type이 없으면 빈 배열) */
+  types: { id: string; label: string }[];
+  goal?: string;
 }
 
 export interface ResolvedPart {
@@ -95,6 +108,7 @@ export interface ResolvedPart {
   numeral: string;
   title: string;
   level: LevelId;
+  summary?: string;
   lectures: ResolvedLecture[];
   publishedCount: number;
 }
@@ -170,6 +184,11 @@ export function validateRoadmap(roadmap: RoadmapDef): void {
       if (lecture.level && !(lecture.level in LEVELS)) {
         errors.push(`알 수 없는 난이도: ${lecture.id} → ${lecture.level}`);
       }
+      for (const type of lecture.type ?? []) {
+        if (!roadmap.typeLabels || !(type in roadmap.typeLabels)) {
+          errors.push(`알 수 없는 강의 유형(typeLabels에 없음): ${lecture.id} → ${type}`);
+        }
+      }
     }
   }
 
@@ -223,6 +242,8 @@ export function resolveRoadmap(roadmap: RoadmapDef, options: ResolveOptions): Re
         status: declaredStatus,
         isPublic,
         href: isPublic ? `${base}${slug}/` : undefined,
+        types: (lecture.type ?? []).map((id) => ({ id, label: roadmap.typeLabels![id] })),
+        goal: lecture.goal,
       };
     });
 
@@ -232,6 +253,7 @@ export function resolveRoadmap(roadmap: RoadmapDef, options: ResolveOptions): Re
       numeral: ROMAN[partIndex] ?? String(partIndex + 1),
       title: part.title,
       level: part.level,
+      summary: part.summary,
       lectures,
       publishedCount: lectures.filter((l) => l.isPublic).length,
     };

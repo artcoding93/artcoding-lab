@@ -75,7 +75,7 @@ src/
   data/numerical-roadmap.ts  # 수치해석 12 Part · 80강 목차 (강의 공개 상태의 기준)
   data/fem-roadmap.ts     # FEM 10 Part · 70강 목차
   data/fem-solver-project.ts  # FEM Solver Project Phase 1–6, 강의 연결(강의 id), 예정 컴포넌트
-  data/quantum-roadmap.ts # 양자컴퓨팅 8 Part · 48강 목차
+  data/quantum-roadmap.ts # 양자컴퓨팅 8 Part · 48강 목차 ('양자 세계에서 양자컴퓨팅까지', Part 설명·강의 유형·학습 목표·시각화 후보 포함)
   data/quantum-simulator-project.ts  # Quantum Simulator Project Phase 1–6, 강의 연결, 예정 컴포넌트
   data/optical-roadmap.ts # 광학 계측 8 Part · 56강 목차
   data/optical-simulator-project.ts  # Optical Metrology Simulator Project Phase 1–7, 강의 연결, 예정 컴포넌트
@@ -107,7 +107,9 @@ src/
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
 public/                   # 정적 파일 (favicon.svg), code/<분야>/ = 다운로드용 전체 코드
-lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md, fem/lecture-01.md). 강의 본문의 기준이며 사이트 빌드에는 쓰지 않는다
+lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md, fem/lecture-01.md,
+                          #   quantum-mechanics/lecture-XX.md). 강의 본문의 기준이며 사이트 빌드에는 쓰지 않는다
+quantum-curriculum-guide.md, claude-quantum-site-update-prompt.md  # 양자컴퓨팅 교육과정 개편 가이드·사이트 수정 프롬프트 (루트에 보존)
 ```
 
 ### 새 파일 배치 규칙 (디렉터리가 없으면 처음 필요할 때 만든다)
@@ -142,7 +144,8 @@ lecture-source/           # 확정 강의 원고·구현 지시서 (예: numeric
 - 새 강의를 추가할 때는 원하는 위치에 `{ id, title, en, slug }`를 넣는다. `id`와 `slug`는 중복될 수 없다(빌드 시 검사).
 - 페이지를 옮길 때는 `git mv`로 파일을 이동하고, 데이터의 `slug`를 수정하고, `astro.config.mjs`의 `redirects`에 이전 URL → 새 URL을 추가한다. 예: `/numerical/bisection` → `/numerical/root-finding/bisection/`
 - 새 상태(예: draft)는 `src/lib/roadmap.ts`의 `STATUSES`에 추가한다.
-- 난이도는 `intro`(입문)·`basic`·`intermediate`·`advanced`·`expert`·`research`이다. 로드맵별 라벨은 `levelLabels`로 바꾼다(FEM: research → '연구', 양자컴퓨팅: advanced → '프로젝트', expert → '확장', 광학 계측: expert → '프로젝트'). 한 Part 안에서 난이도가 나뉘면 강의별 `level`로 지정한다. 검색창 예시 검색어는 `searchExamples`로 지정한다. 필터에는 사용하는 난이도만 표시된다.
+- 난이도는 `intro`(입문)·`basic`·`intermediate`·`advanced`·`expert`·`research`이다. 로드맵별 라벨은 `levelLabels`로 바꾼다(FEM: research → '연구', 양자컴퓨팅: intro → '고교', basic → '고교~대학 교양', intermediate → '대학 교양', advanced → '프로젝트', 광학 계측: expert → '프로젝트').
+- 선택 필드: Part `summary`(Part 설명), 강의 `type`(유형, 로드맵의 `typeLabels` 키), `goal`(한 줄 학습 목표), `visuals`(시각화 후보, 화면 미표시·기록용). `summary`·`type`·`goal`은 데이터에 있을 때만 로드맵에 표시된다(현재 양자컴퓨팅만 사용). 한 Part 안에서 난이도가 나뉘면 강의별 `level`로 지정한다. 검색창 예시 검색어는 `searchExamples`로 지정한다. 필터에는 사용하는 난이도만 표시된다.
 - FEM·양자컴퓨팅·광학 계측 강의 `id`는 프로젝트의 연결 키이므로 **바꾸지 않는다**. 바꾸면 해당 `*-project.ts`도 함께 수정해야 하고, 그렇지 않으면 빌드가 실패한다.
 
 ### 단계별 프로젝트 진행 절차 (FEM · Quantum · Optical Metrology)
@@ -238,21 +241,22 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 
 ### 양자컴퓨팅 강의 설명 순서
 
-대상은 양자역학·물리학 비전공자이다. 양자역학 전체가 아니라 양자컴퓨팅에 필요한 핵심 개념만 다루고, 수식보다 개념 이해와 시각화를 우선한다.
+교육과정은 **'양자 세계에서 양자컴퓨팅까지'**이다. 대상은 고등학교 과학·수학을 배운 학습자이며 수준은 고등학교~대학교 교양이다. 흐름은 흥미로운 현상 → 물리적 직관 → 쉬운 수학적 표현 → 시각화·체험 → 양자컴퓨팅 응용이다. 기준 문서는 루트의 `quantum-curriculum-guide.md`이다.
 
-1. 이번 강의에서 배울 내용
-2. 직관적인 개념 설명
-3. 실생활 또는 컴퓨팅 관점의 비유
-4. 핵심 수식과 의미
-5. Python 코드 실습
-6. 계산 결과 및 시각화
-7. 간단한 실험 또는 응용 예제
-8. 핵심 개념 정리
-9. 다음 강의와의 연결
+1. 도입 질문 또는 실험
+2. 현상과 물리적 직관
+3. 핵심 개념 및 쉬운 수학 (필요할 때)
+4. 그림·애니메이션·인터랙티브 체험 (교육적 가치가 있을 때)
+5. 양자컴퓨팅과의 연결
+6. 핵심 정리와 다음 강의
 
-- 수식은 정확하게 쓰고, **비유가 실제 원리를 왜곡하지 않게** 한다(예: 중첩을 '0과 1을 동시에 계산한다'로만 설명하지 않는다). 비유의 한계를 함께 적는다.
-- 상태는 디랙 표기($\lvert\psi\rangle$)와 NumPy 배열을 함께 보여 준다. 큐비트 순서(어느 큐비트가 최상위 비트인지) 규칙을 분야 전체에서 하나로 정하고 일관되게 쓴다.
-- 코드는 NumPy 기반의 작은 예제로 작성한다. 초기 강의에서 Qiskit 등 양자 SDK 사용을 강제하지 않는다(SDK는 Part VIII에서 비교·검증용으로 다룬다).
+- 강의에 따라 순서와 비중을 조정한다. 연습문제는 만들지 않으며, Python 코드를 모든 강의에 강제하지 않는다(Part VI부터 Python 기초 지식 필요).
+- 강의 유형: A(개념 중심)·B(수학 중심)·C(시뮬레이션 중심), 혼합 가능. 난이도: 고교·고교~대학 교양·대학 교양·프로젝트.
+- 고교 수준은 파동·확률·기본 함수·벡터 직관, 대학 교양은 복소수·2×2 행렬·벡터 연산을 예제로 도입해 필요한 범위에서만 계산한다. 고급 증명, 힐베르트 공간의 엄밀한 전개, 복잡한 슈뢰딩거 방정식 풀이, 대학원 수준의 형식주의는 다루지 않는다.
+- 학술적 표현: 중첩을 '여러 고전 상태가 동시에 확정됨'으로 단순화하지 않는다. 측정을 관측자의 의식이 결과를 바꾸는 것으로 설명하지 않는다. 얽힘을 초광속 정보 전달로 설명하지 않는다. 속도 향상은 특정 문제에 한정된다. 확률진폭과 측정 확률을 구분한다(확률 = 진폭 절댓값의 제곱). 비유를 쓰면 한계를 함께 적는다.
+- 상태는 디랙 표기($\lvert\psi\rangle$)로 쓰고, 코드가 있는 강의에서는 NumPy 배열과 함께 보여 준다. 큐비트 순서(어느 큐비트가 최상위 비트인지) 규칙을 분야 전체에서 하나로 정하고 일관되게 쓴다. 양자 SDK는 Part VIII에서 비교·검증용으로만 다룬다.
+- 시뮬레이터·시각화는 입력 변수, 모델의 가정, 결과 해석, 검증 사례, 모바일 동작을 정한 뒤 구현한다. 데이터의 `visuals`는 계획일 뿐이므로 구현 전에는 화면에 표시하지 않는다.
+- **원고 절차**: 강의 원고는 ChatGPT에서 목차 → v1.0 → 사용자 검토 → 승인 순서로 확정된다. 승인된 원고만 `lecture-source/quantum-mechanics/lecture-XX.md`로 보관하고, `lecture-XX-spec.md`(구현 지시서)를 받은 뒤 웹페이지를 구현한다. 승인되지 않은 강의 본문은 만들지 않는다.
 - 강의가 시뮬레이터 프로젝트의 Phase와 연결되어 있으면, 강의 끝에서 해당 Phase에서 무엇을 구현하는지 안내한다.
 
 ### 광학 계측 강의 설명 순서

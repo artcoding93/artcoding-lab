@@ -1,0 +1,92 @@
+---
+// 시각화: 연속적인 에너지와 양자화된 에너지 (플랑크 진동자 모형 E_n = n·hf). 정적 SVG.
+// 사용법 (MDX): <EnergyLevelsFigure>캡션 문장</EnergyLevelsFigure>
+import '../numerical/plot.css';
+import './quantum-plot.css';
+
+const bottom = 176;
+const step = 34;
+const levels = [0, 1, 2, 3, 4];
+const levelLabel = (n: number) => (n === 0 ? '0' : n === 1 ? 'hf' : `${n}hf`);
+---
+
+<figure class="np np--quantum not-content" aria-label="연속적인 에너지와 양자화된 에너지의 비교">
+  <div class="q-panels">
+    <div class="q-panel">
+      <svg viewBox="0 0 220 200" role="img" aria-label="연속적인 에너지: 아래부터 위까지 끊김 없이 이어진 막대로, 어떤 에너지 값이든 가질 수 있음을 나타낸다.">
+        <defs>
+          <linearGradient id="el-cont" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" class="el-stop-a" />
+            <stop offset="100%" class="el-stop-b" />
+          </linearGradient>
+        </defs>
+        <line class="el-axis" x1="60" x2="60" y1="14" y2={bottom} />
+        <path class="el-axis-head" d="M60,8l-5,9h10z" />
+        <text class="el-small" x="52" y="20" text-anchor="end">E</text>
+        <rect x="84" y="22" width="52" height={bottom - 22} rx="4" fill="url(#el-cont)" class="el-cont" />
+        <text class="el-small" x="52" y={bottom + 4} text-anchor="end">0</text>
+      </svg>
+      <p class="q-panel__label">연속적인 에너지<span>어떤 값이든 가질 수 있음</span></p>
+    </div>
+    <div class="q-panel">
+      <svg viewBox="0 0 220 200" role="img" aria-label="양자화된 에너지: 0, hf, 2hf, 3hf, 4hf처럼 일정한 간격의 준위만 허용되는 사다리 모양의 그림.">
+        <line class="el-axis" x1="60" x2="60" y1="14" y2={bottom} />
+        <path class="el-axis-head" d="M60,8l-5,9h10z" />
+        <text class="el-small" x="52" y="20" text-anchor="end">E</text>
+        {levels.map((n) => (
+          <g>
+            <line class="el-level" x1="76" x2="150" y1={bottom - n * step} y2={bottom - n * step} />
+            <text class="el-small" x="158" y={bottom - n * step + 4}>{levelLabel(n)}</text>
+          </g>
+        ))}
+        <text class="el-small" x="113" y="20" text-anchor="middle">⋮</text>
+        <path class="el-gap" d={`M190,${bottom}V${bottom - step}M186,${bottom - 4}l4,4l4,-4M186,${bottom - step + 4}l4,-4l4,4`} />
+        <text class="el-small" x="196" y={bottom - step / 2 + 4}>hf</text>
+      </svg>
+      <p class="q-panel__label">양자화된 에너지<span>E<sub>n</sub> = nhf (n = 0, 1, 2, …)</span></p>
+    </div>
+  </div>
+  <figcaption class="np__caption">
+    <slot />
+    <br /><span class="q-tag">주의</span>모든 양자계의 에너지 준위가 이처럼 등간격인 것은 아닙니다. 준위의 구조는 물리계에 따라 달라집니다.
+  </figcaption>
+</figure>
+
+<style>
+  .el-axis {
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.5;
+  }
+  .el-axis-head {
+    fill: var(--sl-color-gray-3);
+  }
+  .el-small {
+    fill: var(--sl-color-gray-2);
+    font-size: 13px;
+  }
+  .el-stop-a {
+    stop-color: color-mix(in srgb, var(--np-accent) 20%, var(--sl-color-bg));
+  }
+  .el-stop-b {
+    stop-color: var(--np-accent);
+  }
+  .el-cont {
+    stroke: var(--np-accent);
+    stroke-width: 1.5;
+  }
+  .el-level {
+    stroke: var(--np-accent);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+  }
+  .el-gap {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.25;
+  }
+  @media (max-width: 600px) {
+    .el-small {
+      font-size: 15px;
+    }
+  }
+</style>

@@ -5,7 +5,7 @@
 //
 // 작성 규칙은 numerical-roadmap.ts·fem-roadmap.ts와 같다.
 // - 강의 번호는 배열 순서로 자동 계산된다. URL은 slug로 고정된다(/quantum/<slug>/).
-//   제목·순서를 바꿔도 id와 slug는 바꾸지 않는다(제1강은 제목이 바뀌었지만 slug는 기존 값을 유지한다).
+//   제목·순서를 바꿔도 id와 slug는 바꾸지 않는다(제1강은 공개 전에 새 제목에 맞춰 slug를 basics/why-quantum-mechanics로 바꿨다).
 // - status를 생략하면 'planned'. 실제 강의 페이지를 작성한 뒤에만 status: 'published'를 추가한다.
 // - 강의 id는 시뮬레이터 프로젝트(quantum-simulator-project.ts)에서 Phase와 강의를 연결하는 키다. 한 번 정하면 바꾸지 않는다.
 // - 난이도 라벨: intro → 고교, basic → 고교~대학 교양, intermediate → 대학 교양, advanced → 프로젝트.
@@ -28,11 +28,12 @@ export const quantumRoadmap = defineRoadmap({
       summary: '빛과 전자, 이중슬릿, 확률, 중첩, 측정 같은 흥미로운 양자 현상에서 출발해 고전 세계와의 차이를 이해합니다.',
       lectures: [
         {
-          id: 'what-is-qc', title: '양자역학은 왜 탄생했을까?', en: 'Why Was Quantum Mechanics Born?', slug: 'basics/what-is-quantum-computing',
+          id: 'what-is-qc', title: '양자역학은 왜 탄생했을까?', en: 'Why Was Quantum Mechanics Born?', slug: 'basics/why-quantum-mechanics',
           keywords: ['양자역학', 'quantum mechanics', '흑체복사', 'blackbody', '광전효과', 'photoelectric', '에너지 양자화', '플랑크', 'planck'],
           type: ['A'],
           goal: '고전물리학의 한계, 흑체복사, 광전효과, 에너지 양자화의 개념을 이해하고 양자컴퓨팅과의 관계를 설명한다.',
           visuals: ['흑체복사 스펙트럼', '에너지 양자화', '광전효과'],
+          status: 'published',
         },
         {
           id: 'wave-particle', title: '빛과 전자: 파동일까, 입자일까?', en: 'Light and Electrons: Waves or Particles?', slug: 'basics/wave-particle-duality',

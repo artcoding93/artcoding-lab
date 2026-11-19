@@ -1,5 +1,5 @@
 ---
-// 강의 상단 정보: 분야 / Part / Lecture 번호, 영문 제목, 난이도, 학습 시간 등
+// 강의 상단 정보: 분야 / Part / Lecture 번호, 영문 제목, 난이도, 유형(있을 때), 학습 시간 등
 // (국문 제목은 Starlight가 frontmatter title로 출력한다)
 // Part·번호·영문 제목·난이도는 로드맵 데이터에서 계산한다.
 // 사용법 (MDX):
@@ -24,8 +24,11 @@ interface Props {
 const { roadmap, lectureId, field, duration, prerequisites, environment, accent = 'var(--sl-color-accent)' } = Astro.props;
 const { part, partRoman, lecture, levelLabel } = await loadLecture(roadmap, lectureId);
 const roadmapHref = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${roadmap.basePath}/`;
+// 강의 유형은 로드맵 데이터에 type이 있을 때만 표시한다 (현재 양자컴퓨팅만 사용)
+const typeLabel = lecture.types.map((t) => `${t.id} ${t.label}`).join(' · ');
 const meta = [
   ['난이도', levelLabel],
+  ['유형', typeLabel],
   ['예상 학습 시간', duration],
   ['선수 지식', prerequisites],
   ['실습 환경', environment],

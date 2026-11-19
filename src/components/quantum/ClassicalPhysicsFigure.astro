@@ -1,0 +1,113 @@
+---
+// 그림: 고전역학의 대표 현상 — 포물선 운동과 행성 궤도 (교육용 도식, 축척 아님). 정적 SVG.
+// - 포물선: 같은 시간 간격의 공 위치를 실제 포물선 y = 4h·s(1 − s) 위에 찍는다(간격이 수평으로 일정 = 수평 속도 일정).
+// - 행성 궤도: 태양을 타원의 한 초점에 둔다(타원 모양은 과장).
+// 사용법 (MDX): <ClassicalPhysicsFigure>캡션 문장</ClassicalPhysicsFigure>
+import { fmt } from '../../lib/plot/svg';
+import '../numerical/plot.css';
+import './quantum-plot.css';
+
+// 포물선 운동
+const ground = 150;
+const x0 = 22;
+const span = 196;
+const height = 112;
+const traj = Array.from({ length: 61 }, (_, i) => {
+  const s = i / 60;
+  return `${i ? 'L' : 'M'}${fmt(x0 + span * s)},${fmt(ground - 4 * height * s * (1 - s))}`;
+}).join('');
+// 처음 속도 방향 = 궤적의 접선 방향 (dx/ds, dy/ds) = (span, −4h)
+const tangentLen = Math.hypot(span, 4 * height);
+const ux = span / tangentLen;
+const uy = (-4 * height) / tangentLen;
+const arrowStart = [x0 + ux * 8, ground - 6 + uy * 8];
+const arrowTip = [x0 + ux * 40, ground - 6 + uy * 40];
+const arrowHead = `M${fmt(arrowTip[0])},${fmt(arrowTip[1])}L${fmt(arrowTip[0] - ux * 9 + uy * 4.5)},${fmt(arrowTip[1] - uy * 9 - ux * 4.5)}L${fmt(arrowTip[0] - ux * 9 - uy * 4.5)},${fmt(arrowTip[1] - uy * 9 + ux * 4.5)}Z`;
+const balls = Array.from({ length: 7 }, (_, i) => {
+  const s = i / 6;
+  return [x0 + span * s, ground - 4 * height * s * (1 - s)] as const;
+});
+
+// 행성 궤도 (이심률 0.55로 과장)
+const cx = 122;
+const cy = 86;
+const a = 96;
+const e = 0.55;
+const b = a * Math.sqrt(1 - e * e);
+const sunX = cx - a * e;
+const planetAngle = 0.95;
+const px = cx + a * Math.cos(planetAngle);
+const py = cy - b * Math.sin(planetAngle);
+---
+
+<figure class="np np--quantum not-content" aria-label="고전역학의 대표 현상: 포물선 운동과 행성 궤도">
+  <div class="q-panels">
+    <div class="q-panel">
+      <svg viewBox="0 0 240 172" role="img" aria-label="비스듬히 던진 공이 같은 시간 간격마다 포물선 위의 위치에 놓이는 그림">
+        <line class="cf-ground" x1="8" x2="232" y1={ground} y2={ground} />
+        <path class="cf-path" d={traj} />
+        {balls.map(([bx, by]) => <circle class="cf-ball" cx={fmt(bx)} cy={fmt(by - 6)} r="6" />)}
+        <path class="cf-arrow" d={`M${fmt(arrowStart[0])},${fmt(arrowStart[1])}L${fmt(arrowTip[0])},${fmt(arrowTip[1])}`} />
+        <path class="cf-arrow-head" d={arrowHead} />
+      </svg>
+      <p class="q-panel__label">포물선 운동<span>같은 시간 간격의 공 위치</span></p>
+    </div>
+    <div class="q-panel">
+      <svg viewBox="0 0 240 172" role="img" aria-label="태양을 한 초점으로 하는 타원 궤도를 도는 행성의 그림">
+        <ellipse class="cf-orbit" cx={cx} cy={cy} rx={a} ry={fmt(b)} />
+        <circle class="cf-sun" cx={fmt(sunX)} cy={cy} r="13" />
+        <text class="cf-small" x={fmt(sunX)} y={cy + 30} text-anchor="middle">태양</text>
+        <circle class="cf-planet" cx={fmt(px)} cy={fmt(py)} r="7" />
+        <text class="cf-small" x={fmt(px + 12)} y={fmt(py - 8)}>행성</text>
+      </svg>
+      <p class="q-panel__label">행성 궤도<span>태양은 타원의 한 초점 (타원 모양은 과장)</span></p>
+    </div>
+  </div>
+  <figcaption class="np__caption">
+    <slot />
+  </figcaption>
+</figure>
+
+<style>
+  .cf-ground {
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 2;
+  }
+  .cf-path,
+  .cf-orbit {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+  }
+  .cf-ball {
+    fill: var(--np-accent);
+    stroke: var(--sl-color-bg);
+    stroke-width: 1.5;
+  }
+  .cf-arrow {
+    fill: none;
+    stroke: var(--sl-color-white);
+    stroke-width: 2;
+  }
+  .cf-arrow-head {
+    fill: var(--sl-color-white);
+  }
+  .cf-sun {
+    fill: #f59e0b;
+    stroke: #b45309;
+    stroke-width: 1.5;
+  }
+  .cf-planet {
+    fill: var(--q-electron);
+  }
+  .cf-small {
+    fill: var(--sl-color-gray-2);
+    font-size: 12px;
+  }
+  @media (max-width: 600px) {
+    .cf-small {
+      font-size: 14px;
+    }
+  }
+</style>

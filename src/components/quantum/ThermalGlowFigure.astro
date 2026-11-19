@@ -1,0 +1,73 @@
+---
+// 그림: 가열된 금속의 발광 변화 (설명용 색, 온도–색상의 정량 대응이 아님). 정적 SVG.
+// 사용법 (MDX): <ThermalGlowFigure>캡션 문장</ThermalGlowFigure>
+import '../numerical/plot.css';
+import './quantum-plot.css';
+
+// 설명용 색 (어두운 붉은색 → 주황 → 노랑 → 밝은 색). 실제 온도 수치와 대응시키지 않는다.
+const stages = [
+  { color: '#5b1209', glow: 0.15, label: '어두운 붉은색' },
+  { color: '#b42a10', glow: 0.35, label: '붉은색' },
+  { color: '#ef6c1a', glow: 0.6, label: '주황색' },
+  { color: '#ffc04d', glow: 0.85, label: '노란색' },
+  { color: '#fff3d1', glow: 1, label: '밝은 빛' },
+];
+const W = 520;
+const rodW = 70;
+const gap = (W - 40 - stages.length * rodW) / (stages.length - 1);
+---
+
+<figure class="np np--quantum not-content" aria-label="가열된 금속의 발광 변화">
+  <div class="np__plot">
+    <svg viewBox={`0 0 ${W} 200`} role="img" aria-label="온도가 높아질수록 금속 막대의 빛이 어두운 붉은색에서 붉은색, 주황색, 노란색을 거쳐 밝은 빛으로 바뀌는 설명용 그림. 색은 정량적인 온도 대응이 아니다.">
+      <defs>
+        {stages.map((s, i) => (
+          <radialGradient id={`tg-glow-${i}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color={s.color} stop-opacity={0.55 * s.glow} />
+            <stop offset="100%" stop-color={s.color} stop-opacity="0" />
+          </radialGradient>
+        ))}
+      </defs>
+      {stages.map((s, i) => {
+        const x = 20 + i * (rodW + gap);
+        return (
+          <g>
+            <ellipse cx={x + rodW / 2} cy="80" rx={rodW * 0.95} ry="72" fill={`url(#tg-glow-${i})`} />
+            <rect class="tg-rod" x={x} y="30" width={rodW} height="100" rx="8" fill={s.color} />
+            <text class="tg-label" x={x + rodW / 2} y="152" text-anchor="middle">{s.label}</text>
+          </g>
+        );
+      })}
+      <path class="tg-arrow" d="M20,178H498" />
+      <path class="tg-arrow-head" d="M500,178l-10,-5v10z" />
+      <text class="tg-label" x="20" y="196">낮은 온도</text>
+      <text class="tg-label" x="500" y="196" text-anchor="end">높은 온도</text>
+    </svg>
+  </div>
+  <figcaption class="np__caption">
+    <slot />
+  </figcaption>
+</figure>
+
+<style>
+  .tg-rod {
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1;
+  }
+  .tg-label {
+    fill: var(--sl-color-gray-2);
+    font-size: 12.5px;
+  }
+  .tg-arrow {
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 2;
+  }
+  .tg-arrow-head {
+    fill: var(--sl-color-gray-3);
+  }
+  @media (max-width: 600px) {
+    .tg-label {
+      font-size: 16px;
+    }
+  }
+</style>

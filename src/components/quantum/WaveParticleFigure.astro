@@ -1,0 +1,110 @@
+---
+// 그림: 이중슬릿 실험의 간섭무늬와 개별 검출 사건 (파동-입자 이중성 소개용 정적 개념도).
+// - 세기 분포: 교육용 단순화 모델 I(u) = cos²(πu) · sinc²(πu·a/d) (a/d = 0.25)
+// - 검출 점: 같은 세기 분포에서 무작위로 뽑은 위치 (시드 고정 → 빌드마다 같은 그림)
+// - 슬릿 간격·파장 조절 등 상세 실험은 제2강에서 다룬다.
+// 사용법 (MDX): <WaveParticleFigure>캡션 문장</WaveParticleFigure>
+import { fmt } from '../../lib/plot/svg';
+import '../numerical/plot.css';
+import './quantum-plot.css';
+
+const U = 3; // 화면 위치 u ∈ [−3, 3]
+const RATIO = 0.25; // 슬릿 폭 / 슬릿 간격
+const intensity = (u: number) => {
+  const x = Math.PI * u * RATIO;
+  const envelope = x === 0 ? 1 : (Math.sin(x) / x) ** 2;
+  return Math.cos(Math.PI * u) ** 2 * envelope;
+};
+
+// 시드 고정 난수 (mulberry32)
+function rng(seed: number) {
+  let t = seed >>> 0;
+  return () => {
+    t = (t + 0x6d2b79f5) >>> 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const random = rng(20261119);
+/** 세기 분포를 따르는 검출 위치 (기각 표본추출) */
+function sampleHits(count: number): [number, number][] {
+  const hits: [number, number][] = [];
+  while (hits.length < count) {
+    const u = -U + 2 * U * random();
+    if (random() <= intensity(u)) hits.push([u, random()]);
+  }
+  return hits;
+}
+
+const W = 240;
+const H = 120;
+const PAD = 10;
+const sx = (u: number) => PAD + ((u + U) / (2 * U)) * (W - 2 * PAD);
+const screenTop = 18;
+const screenBottom = H - 14;
+const curve = Array.from({ length: 301 }, (_, i) => {
+  const u = -U + (2 * U * i) / 300;
+  return `${i ? 'L' : 'M'}${fmt(sx(u))},${fmt(screenBottom - intensity(u) * (screenBottom - screenTop - 6))}`;
+}).join('');
+const bands = Array.from({ length: 120 }, (_, i) => {
+  const u0 = -U + (2 * U * i) / 120;
+  const u1 = -U + (2 * U * (i + 1)) / 120;
+  return { x: sx(u0), w: sx(u1) - sx(u0) + 0.3, o: intensity((u0 + u1) / 2) };
+});
+const panels = [
+  { count: 10, label: '검출 10번' },
+  { count: 200, label: '검출 200번' },
+  { count: 2000, label: '검출 2000번' },
+].map((p) => ({ ...p, hits: sampleHits(p.count) }));
+---
+
+<figure class="np np--quantum not-content" aria-label="이중슬릿 실험의 간섭무늬와 개별 검출 사건 비교">
+  <div class="q-panels">
+    <div class="q-panel">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="간섭무늬: 스크린 위치에 따라 밝고 어두운 띠가 반복되는 세기 분포와 그 그래프">
+        {bands.map((b) => <rect class="wp-band" x={fmt(b.x)} y={screenTop} width={fmt(b.w)} height={screenBottom - screenTop} style={`opacity:${fmt(b.o)}`} />)}
+        <rect class="wp-screen" x={PAD} y={screenTop} width={W - 2 * PAD} height={screenBottom - screenTop} />
+        <path class="wp-curve" d={curve} />
+      </svg>
+      <p class="q-panel__label">간섭무늬<span>많은 검출이 모였을 때의 세기 분포</span></p>
+    </div>
+    {panels.map((p) => (
+      <div class="q-panel">
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`광자 ${p.count}개가 하나씩 검출된 위치를 점으로 찍은 그림`}>
+          <rect class="wp-screen" x={PAD} y={screenTop} width={W - 2 * PAD} height={screenBottom - screenTop} />
+          {p.hits.map(([u, v]) => (
+            <circle class="wp-hit" cx={fmt(sx(u))} cy={fmt(screenTop + 3 + v * (screenBottom - screenTop - 6))} r={p.count <= 10 ? 3.2 : p.count <= 200 ? 1.8 : 1.05} />
+          ))}
+        </svg>
+        <p class="q-panel__label">{p.label}<span>{p.count === 10 ? '검출 하나는 점 하나' : p.count === 200 ? '띠가 보이기 시작' : '간섭무늬가 드러남'}</span></p>
+      </div>
+    ))}
+  </div>
+  <figcaption class="np__caption">
+    <slot />
+    <br /><span class="q-tag">교육용 단순화</span>한 번의 검출은 스크린의 한 점에 기록될 뿐, 그 자체로 연속적인 간섭무늬가 아닙니다. 같은 실험을 반복해 검출이 쌓이면 무늬가 드러납니다.
+  </figcaption>
+</figure>
+
+<style>
+  .q-panels {
+    --q-cols: 2;
+  }
+  .wp-screen {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.25;
+  }
+  .wp-band {
+    fill: var(--np-accent);
+  }
+  .wp-curve {
+    fill: none;
+    stroke: var(--sl-color-white);
+    stroke-width: 1.75;
+  }
+  .wp-hit {
+    fill: var(--sl-color-white);
+  }
+</style>

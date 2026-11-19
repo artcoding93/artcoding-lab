@@ -1,0 +1,224 @@
+---
+// 인터랙티브: 같은 온도에서 플랑크 법칙과 레일리–진스 법칙의 흑체복사 스펙트럼 비교
+// - 온도 슬라이더(3000~8000 K), 선형 보기 / 양쪽 로그 보기
+// - 빈의 변위 법칙으로 구한 최대 복사 파장 표시
+// 계산: src/lib/quantum/blackbody.ts (SI 단위, Python 계산과 대조 검증)
+// 사용법 (MDX): <BlackbodyExplorer>캡션 문장</BlackbodyExplorer>
+import {
+  BLACKBODY_VIEW,
+  LONG_COMPARE_NM,
+  SHORT_COMPARE_NM,
+  blackbodyDescription,
+  blackbodyState,
+  blackbodySvg,
+  formatRadiance,
+  formatRatio,
+} from './render-blackbody';
+import '../numerical/plot.css';
+import './quantum-plot.css';
+
+interface Props {
+  title?: string;
+  /** 초기 온도 [K] */
+  temperature?: number;
+  tMin?: number;
+  tMax?: number;
+  tStep?: number;
+}
+
+const { title = '흑체복사: 플랑크 법칙과 레일리–진스 법칙', temperature = 5500, tMin = 3000, tMax = 8000, tStep = 100 } = Astro.props;
+if (!(tMin > 0 && tMin < tMax && temperature >= tMin && temperature <= tMax)) {
+  throw new Error(`[BlackbodyExplorer] 온도 범위가 잘못되었습니다: ${tMin}~${tMax}, 초기값 ${temperature}`);
+}
+const uid = `blackbody-${Math.random().toString(36).slice(2, 8)}`;
+const clipId = `${uid}-clip`;
+const state = blackbodyState(temperature);
+---
+
+<figure class="np np--quantum not-content" data-blackbody data-clip={clipId} data-initial={temperature}>
+  <div class="np__head">
+    <p class="np__title">{title}</p>
+    <p class="np__subtitle">같은 온도에서 두 법칙의 파장당 분광 복사휘도 비교</p>
+  </div>
+  <div class="np__plot">
+    <svg
+      viewBox={`0 0 ${BLACKBODY_VIEW.width} ${BLACKBODY_VIEW.height}`}
+      role="img"
+      aria-labelledby={`${uid}-desc`}
+      data-svg
+      set:html={blackbodySvg(temperature, 'linear', clipId)}
+    />
+    <p id={`${uid}-desc`} class="sr-only" data-desc>{blackbodyDescription(temperature, 'linear')}</p>
+  </div>
+  <ul class="np__legend" aria-hidden="true">
+    <li><i class="bb-swatch bb-swatch--planck"></i>플랑크 법칙</li>
+    <li><i class="bb-swatch bb-swatch--rj"></i>레일리–진스 법칙 (고전 예측)</li>
+    <li><i class="bb-swatch bb-swatch--peak"></i><span>최대 복사 파장 λ<sub>max</sub></span></li>
+  </ul>
+  <div class="np__controls">
+    <div class="np__slider">
+      <label for={`${uid}-t`}>온도 T</label>
+      <input id={`${uid}-t`} type="range" min={tMin} max={tMax} step={tStep} value={temperature} data-t />
+      <output for={`${uid}-t`} data-t-out>{temperature} K</output>
+    </div>
+    <div class="np__buttons" role="group" aria-label="그래프 눈금">
+      <button type="button" class="np__button" data-view="linear" aria-pressed="true">선형 보기</button>
+      <button type="button" class="np__button" data-view="log" aria-pressed="false">로그 보기</button>
+      <button type="button" class="np__button" data-reset>초기화 ({temperature} K)</button>
+    </div>
+  </div>
+  <dl class="np__readout" aria-live="polite">
+    <div><dt>최대 복사 파장 λ<sub>max</sub> = b / T</dt><dd data-peak>{Math.round(state.peakNm)} nm</dd></div>
+    <div><dt>플랑크 곡선의 최댓값</dt><dd data-peak-value>{formatRadiance(state.peakValue)} kW·sr⁻¹·m⁻²·nm⁻¹</dd></div>
+    <div><dt>레일리–진스 ÷ 플랑크 ({SHORT_COMPARE_NM} nm)</dt><dd data-short>{formatRatio(state.shortRatio)}</dd></div>
+    <div><dt>레일리–진스 ÷ 플랑크 ({LONG_COMPARE_NM / 1000} μm)</dt><dd data-long>{formatRatio(state.longRatio)}</dd></div>
+  </dl>
+  <p class="np__note" data-view-note>
+    <strong>선형 보기</strong> 파장 100~3000 nm. 세로축은 온도마다 플랑크 곡선의 최댓값에 맞춰 조정되므로, 높이의 변화는 위의 ‘플랑크 곡선의 최댓값’에서 확인합니다.
+    짧은 파장 쪽에서 레일리–진스 곡선은 그래프 위로 벗어나 계속 증가합니다.
+  </p>
+  <p class="np__note">
+    <strong>빈의 변위 법칙</strong> 플랑크 곡선이 최대가 되는 파장은 절대온도에 반비례합니다(λ<sub>max</sub> = b / T, b ≈ 2.898 × 10⁻³ m·K).
+    온도가 높을수록 최대 복사 파장이 짧은 쪽으로 이동합니다.
+  </p>
+  {Astro.slots.has('default') && (
+    <figcaption class="np__caption">
+      <slot />
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .np :global(.bb-planck) {
+    fill: none;
+    stroke: var(--np-accent);
+    stroke-width: 2.75;
+    stroke-linejoin: round;
+  }
+  .np :global(.bb-rj) {
+    fill: none;
+    stroke: var(--q-classical);
+    stroke-width: 2.25;
+    stroke-dasharray: 7 4;
+  }
+  .np :global(.bb-peak) {
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.25;
+    stroke-dasharray: 2 3;
+  }
+  .np :global(.bb-peak-dot) {
+    fill: var(--np-accent);
+    stroke: var(--sl-color-bg);
+    stroke-width: 2;
+  }
+  .np :global(.bb-peak-label) {
+    font-size: 12px;
+  }
+  .np :global(.bb-rj-arrow) {
+    fill: none;
+    stroke: var(--q-classical);
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .np :global(.bb-rj-label) {
+    fill: var(--q-classical);
+    font-size: 12px;
+  }
+  .np :global(.bb-axis) {
+    font-size: 11.5px;
+    font-weight: 500;
+    fill: var(--sl-color-gray-2);
+  }
+  .bb-swatch {
+    height: 0 !important;
+    border-radius: 0 !important;
+    width: 1.4rem !important;
+  }
+  .bb-swatch--planck {
+    border-top: 3px solid var(--np-accent);
+  }
+  .bb-swatch--rj {
+    border-top: 3px dashed var(--q-classical);
+  }
+  .bb-swatch--peak {
+    border-top: 2px dotted var(--sl-color-gray-3);
+  }
+  @media (max-width: 600px) {
+    .np :global(.bb-peak-label),
+    .np :global(.bb-rj-label) {
+      font-size: 16px;
+    }
+    .np :global(.bb-axis) {
+      font-size: 15px;
+    }
+  }
+</style>
+
+<script>
+  import { blackbodyDescription, blackbodyState, blackbodySvg, formatRadiance, formatRatio, type BlackbodyView } from './render-blackbody';
+
+  const NOTES: Record<BlackbodyView, string> = {
+    linear:
+      '<strong>선형 보기</strong> 파장 100~3000 nm. 세로축은 온도마다 플랑크 곡선의 최댓값에 맞춰 조정되므로, 높이의 변화는 위의 ‘플랑크 곡선의 최댓값’에서 확인합니다. 짧은 파장 쪽에서 레일리–진스 곡선은 그래프 위로 벗어나 계속 증가합니다.',
+    log:
+      '<strong>로그 보기</strong> 가로축(파장 100 nm~100 μm)과 세로축을 모두 로그 눈금으로 그려, 모든 온도에서 같은 범위를 보여 줍니다. 긴 파장에서는 두 곡선이 거의 겹치고, 짧은 파장으로 갈수록 크게 벌어집니다.',
+  };
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-blackbody]')) {
+    const clipId = root.dataset.clip!;
+    const initial = Number(root.dataset.initial);
+    const slider = root.querySelector<HTMLInputElement>('[data-t]')!;
+    const tOut = root.querySelector('[data-t-out]')!;
+    const svg = root.querySelector('[data-svg]')!;
+    const desc = root.querySelector('[data-desc]')!;
+    const viewButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-view]')];
+    const note = root.querySelector<HTMLElement>('[data-view-note]')!;
+    const out = {
+      peak: root.querySelector('[data-peak]')!,
+      peakValue: root.querySelector('[data-peak-value]')!,
+      short: root.querySelector('[data-short]')!,
+      long: root.querySelector('[data-long]')!,
+    };
+    const min = Number(slider.min);
+    const max = Number(slider.max);
+    const step = Number(slider.step);
+    let view: BlackbodyView = 'linear';
+    let T = initial;
+
+    // 하나의 (온도, 보기) 상태로 그래프와 수치를 함께 갱신한다
+    const render = () => {
+      const state = blackbodyState(T);
+      slider.value = String(T);
+      tOut.textContent = `${T} K`;
+      svg.innerHTML = blackbodySvg(T, view, clipId);
+      desc.textContent = blackbodyDescription(T, view);
+      out.peak.textContent = `${Math.round(state.peakNm)} nm`;
+      out.peakValue.textContent = `${formatRadiance(state.peakValue)} kW·sr⁻¹·m⁻²·nm⁻¹`;
+      out.short.textContent = formatRatio(state.shortRatio);
+      out.long.textContent = formatRatio(state.longRatio);
+      note.innerHTML = NOTES[view];
+      viewButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+      root.dataset.t = String(T);
+      root.dataset.view = view;
+    };
+    const setT = (raw: number) => {
+      if (!Number.isFinite(raw)) return;
+      T = Math.min(max, Math.max(min, Math.round(raw / step) * step));
+      render();
+    };
+
+    slider.addEventListener('input', () => setT(Number(slider.value)));
+    viewButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        view = b.dataset.view as BlackbodyView;
+        render();
+      }),
+    );
+    root.querySelector('[data-reset]')!.addEventListener('click', () => {
+      view = 'linear';
+      setT(initial);
+    });
+    render();
+  }
+</script>

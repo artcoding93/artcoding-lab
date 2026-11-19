@@ -1,0 +1,282 @@
+---
+// 인터랙티브: 광전효과 — 광자 에너지 hf, 일함수 φ, 빛의 세기(광자 수)를 바꾸며 전자 방출과 K_max를 관찰
+// - hf < φ: 전자 방출 없음 / hf = φ: 문턱 조건(K_max = 0) / hf > φ: K_max = hf − φ
+// - 빛의 세기는 방출 전자 수만 바꾸고 K_max는 바꾸지 않는다
+// 계산: src/lib/quantum/photoelectric.ts
+// 사용법 (MDX): <PhotoelectricExplorer>캡션 문장</PhotoelectricExplorer>
+import {
+  PHOTO_VIEW,
+  electronCount,
+  formatFrequency,
+  photoDescription,
+  photoResult,
+  photoSvg,
+  resultHtml,
+  type PhotoelectricState,
+} from './render-photoelectric';
+import '../numerical/plot.css';
+import './quantum-plot.css';
+
+interface Props {
+  title?: string;
+  /** 초기 상태 (기본: 원고 예제 — 광자 3.0 eV, 일함수 2.0 eV) */
+  energy?: number;
+  workFunction?: number;
+  intensity?: number;
+}
+
+const { title = '광전효과: 광자 에너지와 일함수', energy = 3.0, workFunction = 2.0, intensity = 3 } = Astro.props;
+const initial: PhotoelectricState = { energy, workFunction, intensity };
+const uid = `photo-${Math.random().toString(36).slice(2, 8)}`;
+const result = photoResult(initial);
+---
+
+<figure class="np np--quantum not-content" data-photoelectric data-initial={JSON.stringify(initial)}>
+  <div class="np__head">
+    <p class="np__title">{title}</p>
+    <p class="np__subtitle"><span class="q-tag">교육용 단순화</span>광자 하나가 흡수되면 전자 하나가 나오는 경우만 그립니다</p>
+  </div>
+  <div class="np__plot">
+    <svg viewBox={`0 0 ${PHOTO_VIEW.width} ${PHOTO_VIEW.height}`} role="img" aria-labelledby={`${uid}-desc`} data-svg set:html={photoSvg(initial)} />
+    <p id={`${uid}-desc`} class="sr-only" data-desc>{photoDescription(initial)}</p>
+  </div>
+  <ul class="np__legend" aria-hidden="true">
+    <li><i class="pe-swatch pe-swatch--photon"></i><span>광자 (에너지 hf)</span></li>
+    <li><i class="pe-swatch pe-swatch--electron"></i><span>방출 전자 e⁻ (화살표 길이 ∝ K<sub>max</sub>)</span></li>
+    <li><i class="pe-swatch pe-swatch--used"></i><span>전자를 꺼내는 데 쓰인 에너지 (φ)</span></li>
+    <li><i class="pe-swatch pe-swatch--kmax"></i><span>남는 에너지 K<sub>max</sub></span></li>
+  </ul>
+  <div class="np__controls pe-controls">
+    <div class="np__slider">
+      <label for={`${uid}-e`}>광자 에너지 hf</label>
+      <input id={`${uid}-e`} type="range" min="0.5" max="5" step="0.1" value={energy} data-energy />
+      <output for={`${uid}-e`} data-energy-out>{energy.toFixed(1)} eV</output>
+    </div>
+    <div class="np__slider">
+      <label for={`${uid}-w`}>일함수 φ</label>
+      <input id={`${uid}-w`} type="range" min="1" max="5" step="0.1" value={workFunction} data-work />
+      <output for={`${uid}-w`} data-work-out>{workFunction.toFixed(1)} eV</output>
+    </div>
+    <div class="np__slider">
+      <label for={`${uid}-i`}>빛의 세기 (광자 수)</label>
+      <input id={`${uid}-i`} type="range" min="1" max="5" step="1" value={intensity} data-intensity />
+      <output for={`${uid}-i`} data-intensity-out>{intensity}</output>
+    </div>
+    <div class="np__buttons">
+      <button type="button" class="np__button" data-preset="3.0">예제 ① 광자 3.0 eV</button>
+      <button type="button" class="np__button" data-preset="1.5">예제 ② 광자 1.5 eV</button>
+      <button type="button" class="np__button" data-reset>초기화</button>
+    </div>
+  </div>
+  <dl class="np__readout" aria-live="polite">
+    <div><dt>광자 하나의 에너지 hf</dt><dd data-r-energy>{energy.toFixed(1)} eV</dd></div>
+    <div><dt>진동수 f = E / h</dt><dd data-r-freq>{formatFrequency(energy)}</dd></div>
+    <div><dt>결과</dt><dd data-r-result set:html={resultHtml(result)} /></div>
+    <div><dt>방출 전자 수 (단순화)</dt><dd data-r-count>{electronCount(initial)}개</dd></div>
+  </dl>
+  <p class="np__note">
+    <strong>빛의 세기</strong>를 바꾸면 광자 수와 방출 전자 수만 달라지고, 최대 운동에너지 K<sub>max</sub>는 달라지지 않습니다.
+    K<sub>max</sub>를 바꾸는 것은 광자 하나의 에너지 hf(진동수)와 금속의 일함수 φ입니다.
+  </p>
+  {Astro.slots.has('default') && (
+    <figcaption class="np__caption">
+      <slot />
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .pe-controls .np__slider {
+    flex-basis: 100%;
+  }
+  .pe-controls .np__slider label {
+    min-width: 8.5rem;
+  }
+  .pe-controls .np__slider output {
+    min-width: 3.6rem;
+  }
+  .np :global(.pe-metal) {
+    fill: color-mix(in srgb, var(--sl-color-gray-4) 55%, var(--sl-color-bg));
+    stroke: var(--sl-color-gray-3);
+  }
+  .np :global(.pe-metal-label) {
+    fill: var(--sl-color-white);
+  }
+  .np :global(.pe-photon) {
+    fill: none;
+    stroke: var(--q-photon);
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+  .np :global(.pe-photon-head) {
+    fill: var(--q-photon);
+  }
+  .np :global(.pe-electron) {
+    fill: var(--q-electron);
+  }
+  .np :global(.pe-e) {
+    fill: #fff;
+    font-size: 8.5px;
+    font-weight: 700;
+  }
+  .np :global(.pe-electron-path) {
+    stroke: var(--q-electron);
+    stroke-width: 2;
+  }
+  .np :global(.pe-electron-head) {
+    fill: var(--q-electron);
+  }
+  .np :global(.pe-text) {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .np :global(.pe-small) {
+    fill: var(--sl-color-gray-2);
+    font-size: 11.5px;
+  }
+  .np :global(.pe-tick) {
+    fill: var(--sl-color-gray-3);
+    font-size: 11px;
+  }
+  .np :global(.pe-status) {
+    font-size: 13.5px;
+    font-weight: 700;
+    fill: var(--sl-color-white);
+  }
+  .np :global(.pe-status--emission) {
+    fill: var(--np-accent-text);
+  }
+  .np :global(.pe-axis) {
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.25;
+  }
+  .np :global(.pe-bar-used) {
+    fill: color-mix(in srgb, var(--sl-color-gray-3) 45%, transparent);
+  }
+  .np :global(.pe-bar-kmax) {
+    fill: color-mix(in srgb, var(--np-accent) 55%, transparent);
+  }
+  .np :global(.pe-bar-frame) {
+    fill: none;
+    stroke: var(--q-photon);
+    stroke-width: 2;
+  }
+  .np :global(.pe-phi) {
+    stroke: var(--sl-color-white);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 3;
+  }
+  .np :global(.pe-phi-label),
+  .np :global(.pe-kmax-label) {
+    fill: var(--sl-color-white);
+    font-weight: 600;
+  }
+  .pe-swatch--photon {
+    background: var(--q-photon);
+  }
+  .pe-swatch--electron {
+    background: var(--q-electron);
+    border-radius: 50% !important;
+  }
+  .pe-swatch--used {
+    background: color-mix(in srgb, var(--sl-color-gray-3) 45%, transparent);
+  }
+  .pe-swatch--kmax {
+    background: color-mix(in srgb, var(--np-accent) 55%, transparent);
+  }
+  @media (max-width: 600px) {
+    .pe-controls .np__slider label {
+      min-width: 0;
+      font-size: 0.85rem;
+    }
+    .np :global(.pe-small),
+    .np :global(.pe-tick) {
+      font-size: 16.5px;
+    }
+    .np :global(.pe-text),
+    .np :global(.pe-status) {
+      font-size: 18px;
+    }
+  }
+</style>
+
+<script>
+  import {
+    electronCount,
+    formatFrequency,
+    photoDescription,
+    photoResult,
+    photoSvg,
+    resultHtml,
+    type PhotoelectricState,
+  } from './render-photoelectric';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-photoelectric]')) {
+    const initial = JSON.parse(root.dataset.initial!) as PhotoelectricState;
+    const sliders = {
+      energy: root.querySelector<HTMLInputElement>('[data-energy]')!,
+      workFunction: root.querySelector<HTMLInputElement>('[data-work]')!,
+      intensity: root.querySelector<HTMLInputElement>('[data-intensity]')!,
+    };
+    const outputs = {
+      energy: root.querySelector('[data-energy-out]')!,
+      workFunction: root.querySelector('[data-work-out]')!,
+      intensity: root.querySelector('[data-intensity-out]')!,
+    };
+    const svg = root.querySelector('[data-svg]')!;
+    const desc = root.querySelector('[data-desc]')!;
+    const r = {
+      energy: root.querySelector('[data-r-energy]')!,
+      freq: root.querySelector('[data-r-freq]')!,
+      result: root.querySelector('[data-r-result]')!,
+      count: root.querySelector('[data-r-count]')!,
+    };
+    const clamp = (input: HTMLInputElement, v: number) => {
+      const min = Number(input.min);
+      const max = Number(input.max);
+      const step = Number(input.step);
+      // 0.1 eV 단위로 반올림 (부동소수점 오차 방지)
+      return Math.min(max, Math.max(min, Math.round(v / step) * step));
+    };
+    let state: PhotoelectricState = { ...initial };
+
+    // 하나의 상태로 그림과 수치를 함께 갱신한다
+    const render = () => {
+      state = {
+        energy: Number(clamp(sliders.energy, state.energy).toFixed(1)),
+        workFunction: Number(clamp(sliders.workFunction, state.workFunction).toFixed(1)),
+        intensity: Math.round(clamp(sliders.intensity, state.intensity)),
+      };
+      sliders.energy.value = String(state.energy);
+      sliders.workFunction.value = String(state.workFunction);
+      sliders.intensity.value = String(state.intensity);
+      outputs.energy.textContent = `${state.energy.toFixed(1)} eV`;
+      outputs.workFunction.textContent = `${state.workFunction.toFixed(1)} eV`;
+      outputs.intensity.textContent = String(state.intensity);
+      svg.innerHTML = photoSvg(state);
+      desc.textContent = photoDescription(state);
+      const result = photoResult(state);
+      r.energy.textContent = `${state.energy.toFixed(1)} eV`;
+      r.freq.textContent = formatFrequency(state.energy);
+      r.result.innerHTML = resultHtml(result);
+      r.count.textContent = `${electronCount(state)}개`;
+      root.dataset.regime = result.regime;
+    };
+
+    sliders.energy.addEventListener('input', () => { state.energy = Number(sliders.energy.value); render(); });
+    sliders.workFunction.addEventListener('input', () => { state.workFunction = Number(sliders.workFunction.value); render(); });
+    sliders.intensity.addEventListener('input', () => { state.intensity = Number(sliders.intensity.value); render(); });
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-preset]')) {
+      // 원고 3.3절 예제: 일함수 2.0 eV인 금속
+      button.addEventListener('click', () => {
+        state = { ...state, energy: Number(button.dataset.preset), workFunction: 2.0 };
+        render();
+      });
+    }
+    root.querySelector('[data-reset]')!.addEventListener('click', () => {
+      state = { ...initial };
+      render();
+    });
+    render();
+  }
+</script>

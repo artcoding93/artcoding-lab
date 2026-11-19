@@ -1,0 +1,129 @@
+---
+// 그림: 고전 비트와 큐비트(블로흐 구면의 상태벡터) 비교 — 개념 소개용 정적 SVG.
+// 블로흐 구면 위의 화살표는 상태 |ψ⟩ 하나를 나타낸다. 측정 결과는 0 또는 1 중 하나뿐이다.
+// 사용법 (MDX): <BitQubitFigure>캡션 문장</BitQubitFigure>
+import { fmt } from '../../lib/plot/svg';
+import '../numerical/plot.css';
+import './quantum-plot.css';
+
+// 블로흐 구면 (간단한 비스듬한 투영)
+const cx = 120;
+const cy = 96;
+const R = 68;
+const tilt = 0.32; // 적도 타원의 세로/가로 비
+const theta = (55 * Math.PI) / 180; // 극각
+const phi = (-35 * Math.PI) / 180; // 방위각
+// 투영: 가로 = sinθ·cosφ, 세로 = cosθ(위쪽) − tilt·sinθ·sinφ(앞쪽은 아래로 보이게)
+const tipX = cx + R * Math.sin(theta) * Math.cos(phi);
+const tipY = cy - R * Math.cos(theta) - R * tilt * Math.sin(theta) * Math.sin(phi);
+---
+
+<figure class="np np--quantum not-content" aria-label="고전 비트와 큐비트의 비교">
+  <div class="q-panels">
+    <div class="q-panel">
+      <svg viewBox="0 0 240 200" role="img" aria-label="고전 비트: 0 또는 1 중 하나의 값만 가진다. 지금은 0인 상태를 강조해 표시했다.">
+        <rect class="bq-box bq-box--on" x="38" y="58" width="68" height="68" rx="10" />
+        <text class="bq-digit bq-digit--on" x="72" y="104" text-anchor="middle">0</text>
+        <text class="bq-or" x="120" y="98" text-anchor="middle">또는</text>
+        <rect class="bq-box" x="134" y="58" width="68" height="68" rx="10" />
+        <text class="bq-digit" x="168" y="104" text-anchor="middle">1</text>
+        <text class="bq-small" x="120" y="160" text-anchor="middle">언제나 둘 중 하나의 값</text>
+      </svg>
+      <p class="q-panel__label">고전 비트<span>0 또는 1</span></p>
+    </div>
+    <div class="q-panel">
+      <svg viewBox="0 0 240 200" role="img" aria-label="큐비트: 블로흐 구면. 북극은 상태 0, 남극은 상태 1이고, 구면 위를 가리키는 화살표가 큐비트 상태 psi를 나타낸다.">
+        <circle class="bq-sphere" cx={cx} cy={cy} r={R} />
+        <ellipse class="bq-equator-back" cx={cx} cy={cy} rx={R} ry={fmt(R * tilt)} />
+        <path class="bq-equator" d={`M${cx - R},${cy}A${R},${fmt(R * tilt)} 0 0 0 ${cx + R},${cy}`} />
+        <line class="bq-axis" x1={cx} x2={cx} y1={cy - R - 10} y2={cy + R + 10} />
+        <circle class="bq-pole" cx={cx} cy={cy - R} r="3.5" />
+        <circle class="bq-pole" cx={cx} cy={cy + R} r="3.5" />
+        <text class="bq-ket" x={cx + 10} y={cy - R - 6}>|0⟩</text>
+        <text class="bq-ket" x={cx + 10} y={cy + R + 16}>|1⟩</text>
+        <line class="bq-state" x1={cx} y1={cy} x2={fmt(tipX)} y2={fmt(tipY)} />
+        <circle class="bq-state-tip" cx={fmt(tipX)} cy={fmt(tipY)} r="5" />
+        <text class="bq-ket bq-ket--state" x={fmt(tipX + 9)} y={fmt(tipY - 4)}>|ψ⟩</text>
+        <circle class="bq-center" cx={cx} cy={cy} r="2.5" />
+      </svg>
+      <p class="q-panel__label">큐비트<span>블로흐 구면 위의 상태벡터 |ψ⟩</span></p>
+    </div>
+  </div>
+  <figcaption class="np__caption">
+    <slot />
+    <br /><span class="q-tag">주의</span>큐비트를 측정하면 0 또는 1 중 하나의 결과만 얻습니다. 화살표 하나가 하나의 양자 상태를 나타내며, 0과 1을 동시에 읽어 낸다는 뜻이 아닙니다.
+  </figcaption>
+</figure>
+
+<style>
+  .bq-box {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 2;
+  }
+  .bq-box--on {
+    fill: color-mix(in srgb, var(--np-accent) 18%, transparent);
+    stroke: var(--np-accent);
+  }
+  .bq-digit {
+    fill: var(--sl-color-gray-3);
+    font-size: 34px;
+    font-weight: 700;
+    font-family: var(--sl-font-mono);
+  }
+  .bq-digit--on {
+    fill: var(--sl-color-white);
+  }
+  .bq-or,
+  .bq-small {
+    fill: var(--sl-color-gray-2);
+    font-size: 12.5px;
+  }
+  .bq-sphere {
+    fill: color-mix(in srgb, var(--np-accent) 8%, transparent);
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.5;
+  }
+  .bq-equator-back {
+    fill: none;
+    stroke: var(--sl-color-gray-4);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+  .bq-equator {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.25;
+  }
+  .bq-axis {
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+  }
+  .bq-pole,
+  .bq-center {
+    fill: var(--sl-color-gray-2);
+  }
+  .bq-ket {
+    fill: var(--sl-color-white);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .bq-state {
+    stroke: var(--np-accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  .bq-state-tip {
+    fill: var(--np-accent);
+  }
+  @media (max-width: 600px) {
+    .bq-or,
+    .bq-small {
+      font-size: 15px;
+    }
+    .bq-ket {
+      font-size: 16px;
+    }
+  }
+</style>

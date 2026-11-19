@@ -93,6 +93,9 @@ src/
   lib/plot/svg.ts         # SVG 그래프 공통: 좌표 변환, 곡선 path, 눈금
   components/fem/         # FEM 강의 그림: PlateMeshComparison(연속체·메시 비교), FemApplicationGallery(적용 분야 해석해 개념도 2×2)
   lib/fem/                # 빌드 시점 계산: plate-with-hole-mesh.ts(구멍 있는 판 삼각형 메시), application-fields.ts(해석해 모델·등치선)
+  components/quantum/     # 양자 강의 그림: BlackbodyExplorer·PhotoelectricExplorer(인터랙티브), ClassicalPhysicsFigure, ThermalGlowFigure,
+                          #   EnergyLevelsFigure, WaveParticleFigure, BitQubitFigure, render-*.ts(서버·브라우저 공용), quantum-plot.css(.np--quantum)
+  lib/quantum/            # blackbody.ts(플랑크·레일리–진스·빈, SI 단위), photoelectric.ts(K_max 판정) — Python 독립 계산과 일치 검증
   components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
   content/docs/
     index.mdx             # 홈 (template: splash, 학습 분야 카드)
@@ -100,7 +103,8 @@ src/
                           #   root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
     fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project,
                           #   intuition/what-fem-solves.mdx = 1강(공개)
-    quantum/              # index.mdx = 양자컴퓨팅 로드맵, simulator-project/index.mdx = Quantum Simulator Project
+    quantum/              # index.mdx = 양자컴퓨팅 로드맵, simulator-project/index.mdx = Quantum Simulator Project,
+                          #   basics/why-quantum-mechanics.mdx = 1강 '양자역학은 왜 탄생했을까?' (공개)
     optical/              # index.mdx = 광학 계측 로드맵, simulator-project/index.mdx = Optical Metrology Simulator Project
     mesh-generation/      # index(메인), roadmap, papers/(목록·리뷰), algorithms/, experiments/(목록·보고서), notebook/(목록·노트), frontier
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
@@ -258,6 +262,8 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 - 시뮬레이터·시각화는 입력 변수, 모델의 가정, 결과 해석, 검증 사례, 모바일 동작을 정한 뒤 구현한다. 데이터의 `visuals`는 계획일 뿐이므로 구현 전에는 화면에 표시하지 않는다.
 - **원고 절차**: 강의 원고는 ChatGPT에서 목차 → v1.0 → 사용자 검토 → 승인 순서로 확정된다. 승인된 원고만 `lecture-source/quantum-mechanics/lecture-XX.md`로 보관하고, `lecture-XX-spec.md`(구현 지시서)를 받은 뒤 웹페이지를 구현한다. 승인되지 않은 강의 본문은 만들지 않는다.
 - 강의가 시뮬레이터 프로젝트의 Phase와 연결되어 있으면, 강의 끝에서 해당 Phase에서 무엇을 구현하는지 안내한다.
+- **공개 전 강의**: 페이지 frontmatter에 `draft: true`를 두면 운영 빌드에서 제외되고 개발 서버(`astro dev`)에서만 보인다. 로드맵은 planned로 유지한다. 사용자의 공개 승인 후에만 `draft`를 지우고 `status: 'published'`로 바꾼다.
+- 그림 컴포넌트는 수치해석의 `plot.css`(.np) 틀을 재사용한다. `plot.css`의 규칙을 덮어쓸 때는 CSS 번들 순서에 의존하지 않도록 선택자를 더 구체적으로 쓴다(예: `.np__controls.np__controls--top`).
 
 ### 광학 계측 강의 설명 순서
 

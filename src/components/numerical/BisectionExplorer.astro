@@ -89,7 +89,8 @@ const step = steps[initial - 1];
 </figure>
 
 <style>
-  .np__controls--top {
+  /* plot.css의 .np__controls보다 우선하도록 클래스를 둘 쓴다 (CSS 번들 순서와 무관하게 적용) */
+  .np__controls.np__controls--top {
     border-top: 0;
     border-bottom: 1px solid var(--np-border);
     padding-top: 0.6rem;

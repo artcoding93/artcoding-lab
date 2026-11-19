@@ -54,6 +54,8 @@ export interface LectureDef {
 export interface PartDef {
   id: string;
   title: string;
+  /** Part 영문 제목. 지정하면 한글 제목 아래에 표시된다(선택). */
+  en?: string;
   level: LevelId;
   /** Part 설명 한두 문장. 지정하면 Part 제목 아래에 표시된다. */
   summary?: string;
@@ -107,6 +109,7 @@ export interface ResolvedPart {
   number: number;
   numeral: string;
   title: string;
+  en?: string;
   level: LevelId;
   summary?: string;
   lectures: ResolvedLecture[];
@@ -252,6 +255,7 @@ export function resolveRoadmap(roadmap: RoadmapDef, options: ResolveOptions): Re
       number: partIndex + 1,
       numeral: ROMAN[partIndex] ?? String(partIndex + 1),
       title: part.title,
+      en: part.en,
       level: part.level,
       summary: part.summary,
       lectures,

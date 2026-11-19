@@ -13,7 +13,7 @@
   margin: 0 0 0.7rem;
 }
 
-/* 학습 분야 2열 배치 (4개 분야 2×2 + 연구 카드 한 줄) */
+/* 학습·연구 분야 2열 배치 (6개 분야 2×3) */
 .learning-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -91,7 +91,7 @@
   color: #0891b2;
 }
 
-/* 다섯 번째(연구) 카드: 2열 그리드에서 한 줄 전체 사용 */
+/* 전체 폭 카드 (현재 Developer Resources의 Coding Skills 카드) */
 .learning-card--wide {
   grid-column: 1 / -1;
 }
@@ -203,4 +203,10 @@
   border-radius: 999px;
   color: var(--sl-color-gray-2);
   font-size: 0.8rem;
+}
+
+/* 인공지능(AI) 분야 색: #db2777 */
+.ai .learning-icon {
+  background: #fce7f3;
+  color: #db2777;
 }

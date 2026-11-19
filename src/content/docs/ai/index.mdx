@@ -1,0 +1,32 @@
+---
+title: AI 학습 로드맵
+description: 인공지능의 수학적 기초부터 머신러닝, 딥러닝, 생성형 AI, AI 시스템, 고급 알고리즘, 과학적 AI 응용까지 7개 Part, 70개 강의로 구성된 인공지능(Artificial Intelligence) 학습 로드맵
+tableOfContents: false
+---
+
+import LearningRoadmap from '../../../components/roadmap/LearningRoadmap.astro';
+import { aiRoadmap } from '../../../data/ai-roadmap';
+
+<p lang="en"><strong>Artificial Intelligence — From Mathematical Foundations to Scientific AI</strong></p>
+
+인공지능(Artificial Intelligence, AI)을 도구 사용법이 아니라 **수학적 원리와 알고리즘**으로 이해합니다. 핵심 알고리즘을 Python으로 직접 구현하고, NumPy·scikit-learn·PyTorch 구현과 비교하며, 파라미터를 바꾸는 실험과 시각화로 동작을 확인합니다. 마지막에는 수치해석, FEM, 광학 계측, 메시 생성 같은 과학·공학 문제에 AI를 적용합니다.
+
+**학습 흐름** 이론 → 수학적 원리 → 직접 구현 → 실험 → 연구 (Theory → Mathematics → Implementation → Experiment → Research)
+
+**선수 지식 (Part I 기준)** 기초 미분(도함수·편미분), 벡터와 행렬 연산, 확률·통계의 기본 개념(평균, 분산, 확률분포), Python 기초. 필요한 수학은 강의에서 다시 정리하며 단계적으로 도입합니다.
+
+<details>
+<summary>이 로드맵을 마치면 답할 수 있는 질문</summary>
+
+- 모델이 데이터로부터 '학습한다'는 것은 수학적으로 무엇을 뜻하는가?
+- 손실함수와 경사하강법은 어떻게 모델의 파라미터를 바꾸는가?
+- 과적합은 왜 생기고, 정규화와 검증 데이터는 어떻게 이를 막는가?
+- 역전파는 미분의 연쇄법칙을 어떻게 이용하는가?
+- Attention과 Transformer는 어떤 계산으로 문맥을 반영하는가?
+- 물리 법칙을 신경망 학습에 어떻게 넣을 수 있는가(PINN)?
+
+</details>
+
+**다른 분야와의 관계** 이 분야는 AI의 이론, 수학적 원리, 알고리즘, 모델 구조와 실험을 다룹니다. API 호출, 모델 저장·불러오기, 서빙 코드 같은 독립적인 실무 사용법은 부록 [Coding Skills](/coding-skills/)에서 다룹니다.
+
+<LearningRoadmap roadmap={aiRoadmap} />

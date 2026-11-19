@@ -3,6 +3,7 @@
 // 사용법 (MDX): <LearningRoadmap roadmap={numericalRoadmap} />
 // FEM·양자컴퓨팅도 같은 형식의 데이터(src/lib/roadmap.ts의 RoadmapDef)만 만들면 그대로 재사용할 수 있다.
 // Part 설명(summary)·강의 유형(type)·학습 목표(goal)는 데이터에 있을 때만 표시한다(현재 양자컴퓨팅만 사용).
+// Part 영문 제목(en)도 데이터에 있을 때만 표시한다(현재 AI만 사용).
 import { getCollection } from 'astro:content';
 import {
   STATUSES,
@@ -130,6 +131,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
             <span class="rm-part__heading">
               <span class="rm-part__num">PART {part.numeral}</span>
               <span class="rm-part__title">{part.title}</span>
+              {part.en && <span class="rm-part__en" lang="en">{part.en}</span>}
               {part.summary && <span class="rm-part__desc">{part.summary}</span>}
             </span>
             <span class="rm-part__meta">
@@ -601,6 +603,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
     font-weight: 600;
     color: var(--sl-color-white);
     word-break: keep-all;
+  }
+  .rm-part__en {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
   }
   .rm-part__desc {
     margin-top: 0.2rem;

@@ -1,0 +1,176 @@
+---
+// 스킬 글 상단 정보: 경로(Coding Skills / 섹션 / 프레임워크), 종류·언어·버전·난이도·시간·날짜, 태그, 시리즈 위치.
+// 모든 값은 글 frontmatter의 skill 객체에서 읽는다 (제목은 Starlight가 frontmatter title로 출력).
+// 사용법 (MDX): <SkillHeader id="cpp-filesystem-walk" />   ← frontmatter의 skill.id
+import { codingSkills } from '../../data/coding-skills';
+import { versionText } from '../../lib/coding-skills';
+import { loadSkill, pageHref } from './load-skills';
+import './skills.css';
+
+interface Props {
+  id: string;
+}
+
+const { skill: s, seriesItems, seriesIndex } = await loadSkill(Astro.props.id);
+const base = codingSkills.basePath;
+const sectionHref = pageHref(`${base}/${s.section.id}`);
+const frameworkHref = s.framework?.hasPage ? pageHref(`${base}/backend/${s.framework.id}`) : undefined;
+const tagHref = (tag: string) => `${pageHref(base)}?tag=${encodeURIComponent(tag)}#all-skills`;
+const meta = [
+  ['종류', s.kind.label],
+  ['언어', versionText(s.language?.label, s.languageVersion)],
+  ['프레임워크', s.framework ? versionText(s.framework.title, s.frameworkVersion) : undefined],
+  ['난이도', s.difficulty.label],
+  ['예상 시간', s.readingTime ? `${s.readingTime}분` : undefined],
+  ['게시', s.publishedAt],
+  ['수정', s.updatedAt],
+].filter((item): item is [string, string] => Boolean(item[1]));
+---
+
+<header class="cs cs-post-header not-content">
+  {
+    s.draft && (
+      <p class="cs-post-header__draft">
+        Draft — 공개 승인 전 글입니다. 운영 빌드에서는 페이지와 목록·검색·관련 글에서 모두 제외됩니다.
+      </p>
+    )
+  }
+  <p class="cs-post-header__path">
+    <a href={pageHref(base)}>Coding Skills</a>
+    <span aria-hidden="true">/</span>
+    <a href={sectionHref}>{s.section.title}</a>
+    {
+      s.framework && (
+        <>
+          <span aria-hidden="true">/</span>
+          {frameworkHref ? <a href={frameworkHref}>{s.framework.title}</a> : <span>{s.framework.title}</span>}
+        </>
+      )
+    }
+    <span aria-hidden="true">/</span>
+    <span>{s.category.label}</span>
+  </p>
+  {
+    s.series && (
+      <p class="cs-post-header__series">
+        <a href={pageHref(s.series.def.page)}>{s.series.def.title}</a>
+        {seriesIndex >= 0 && <span> · {seriesItems.length}편 중 {seriesIndex + 1}번째</span>}
+      </p>
+    )
+  }
+  <dl class="cs-post-header__meta">
+    {
+      meta.map(([label, value]) => (
+        <div>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <ul class="cs-post-header__tags" aria-label="태그">
+    {
+      s.tags.map((t) => (
+        <li>
+          <a class="cs-tag" href={tagHref(t.id)}>{t.label}</a>
+        </li>
+      ))
+    }
+  </ul>
+  {s.compilerNotes && <p class="cs-post-header__note"><strong>컴파일러·표준 라이브러리:</strong> {s.compilerNotes}</p>}
+</header>
+
+<style>
+  .cs-post-header {
+    margin: 0 0 1.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-left: 4px solid var(--cs-accent);
+    border-radius: 12px;
+    background: var(--sl-color-bg-nav);
+  }
+  :global(:root[data-theme='light']) .cs-post-header {
+    background: var(--sl-color-gray-7);
+  }
+  .cs-post-header__draft {
+    margin: 0 0 0.6rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px dashed var(--cs-draft);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--cs-draft);
+  }
+  .cs-post-header__path {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+  }
+  .cs-post-header__path a,
+  .cs-post-header__series a {
+    color: var(--sl-color-text);
+    text-decoration: none;
+  }
+  .cs-post-header__path a:hover,
+  .cs-post-header__series a:hover {
+    text-decoration: underline;
+  }
+  .cs-post-header__series {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-3);
+  }
+  .cs-post-header__series a {
+    font-weight: 600;
+  }
+  .cs-post-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+  }
+  .cs-post-header__meta div {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .cs-post-header__meta dt {
+    color: var(--sl-color-gray-3);
+  }
+  .cs-post-header__meta dd {
+    margin: 0;
+    color: var(--sl-color-text);
+    font-weight: 500;
+  }
+  .cs-post-header__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.7rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cs-post-header__tags li {
+    margin: 0;
+  }
+  .cs-post-header__tags .cs-tag {
+    font-size: 0.82rem;
+  }
+  .cs-post-header__note {
+    margin: 0.6rem 0 0;
+    font-size: 0.82rem;
+    color: var(--sl-color-gray-2);
+  }
+  @media (max-width: 600px) {
+    .cs-post-header {
+      padding: 0.85rem 1rem;
+    }
+    .cs-post-header__meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

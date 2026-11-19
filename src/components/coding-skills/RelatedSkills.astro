@@ -1,0 +1,116 @@
+---
+// 스킬 글 하단: 시리즈 이전·다음 글 + 관련 글(frontmatter skill.related의 id 순서).
+// 보이는 글만 연결한다: 운영 빌드에서는 draft 글로 가는 링크를 만들지 않는다.
+// 연결할 글이 하나도 없으면 아무것도 출력하지 않는다.
+// 사용법 (MDX): <RelatedSkills id="cpp-filesystem-walk" />
+import { loadSkill, pageHref } from './load-skills';
+import SkillCard from './SkillCard.astro';
+import './skills.css';
+
+interface Props {
+  id: string;
+}
+
+const { skill, related, prev, next } = await loadSkill(Astro.props.id);
+const hasSeriesNav = Boolean(skill.series && (prev || next));
+---
+
+{
+  (hasSeriesNav || related.length > 0) && (
+    <section class="cs cs-related not-content" aria-label="관련 스킬">
+      {hasSeriesNav && (
+        <nav class="cs-series-nav" aria-label={`${skill.series!.def.title} 시리즈 이동`}>
+          <p class="cs-series-nav__title">
+            <a href={pageHref(skill.series!.def.page)}>{skill.series!.def.title}</a> 시리즈
+          </p>
+          <div class="cs-series-nav__links">
+            {prev ? (
+              <a class="cs-series-nav__link" href={prev.href} rel="prev">
+                <span>← 이전 글</span>
+                {prev.title}
+              </a>
+            ) : (
+              <span />
+            )}
+            {next && (
+              <a class="cs-series-nav__link cs-series-nav__link--next" href={next.href} rel="next">
+                <span>다음 글 →</span>
+                {next.title}
+              </a>
+            )}
+          </div>
+        </nav>
+      )}
+      {related.length > 0 && (
+        <>
+          <div class="cs-heading">
+            <h2>Related Skills</h2>
+            <p>관련 스킬</p>
+          </div>
+          <ul class="cs-list">
+            {related.map((s) => (
+              <li>
+                <SkillCard skill={s} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  )
+}
+
+<style>
+  .cs-related {
+    margin-top: 3rem;
+  }
+  .cs-series-nav {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 12px;
+  }
+  .cs-series-nav__title {
+    margin: 0 0 0.6rem;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-3);
+  }
+  .cs-series-nav__title a {
+    font-weight: 600;
+    color: var(--sl-color-text);
+  }
+  .cs-series-nav__links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .cs-series-nav__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 10px;
+    color: var(--sl-color-white);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .cs-series-nav__link:hover {
+    border-color: var(--cs-accent);
+  }
+  .cs-series-nav__link span {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-3);
+  }
+  .cs-series-nav__link--next {
+    text-align: right;
+  }
+  @media (max-width: 600px) {
+    .cs-series-nav__links {
+      grid-template-columns: 1fr;
+    }
+    .cs-series-nav__link--next {
+      text-align: left;
+    }
+  }
+</style>

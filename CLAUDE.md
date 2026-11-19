@@ -12,6 +12,7 @@
 - **목적**: 수학적·공학적 이론을 코드로 구현하고, 시각화와 인터랙티브 실습으로 학습하는 교육 플랫폼
 - **대상**: 컴퓨터공학·공학계열 대학생, 관련 분야 입문자
 - **학습 분야**: 수치해석(Numerical Methods), 유한요소법(Finite Element Method, FEM), 양자컴퓨팅(Quantum Computing), 광학 계측과 계산 영상(Optical Metrology & Computational Imaging), 메시 생성 알고리즘 연구(Mesh Generation Research Lab, 논문 기반 연구 플랫폼)
+- **부록**: Coding Skills(Practical Programming & Development Archive) — 학습 분야와 별도로 운영하는 실무 개발 아카이브. 홈의 'Developer Resources' 영역에 둔다
 
 단순한 기술 블로그가 아니다. **이론과 구현을 한 페이지에서 함께 학습**하는 교육 플랫폼을 지향한다.
 
@@ -84,6 +85,12 @@ src/
                           #   experiments(형상·지표·실험), research-notes(노트), mesh-research.ts(통합)
   components/research/    # ResearchOverview, ResearchRoadmap, PaperLibrary·PaperCard·PaperSelection,
                           #   AlgorithmReproduction, ExperimentPlan, ResearchNotebook, research.css(.rs- 접두사), load-research.ts
+  data/coding-skills.ts   # Coding Skills 분류: 섹션·카테고리·태그·프레임워크·언어·시리즈 (글 목록은 두지 않음)
+  lib/coding-skills.ts    # Coding Skills 모델: 메타데이터 해석·검증, 정렬, 사이드바 (astro.config에서도 import → zod 금지)
+  lib/coding-skills-schema.ts  # frontmatter `skill` 객체 스키마 (content.config.ts에서 docsSchema 확장)
+  components/coding-skills/  # SkillsHome(메인), SkillCategory(카테고리), SkillArchive(검색·필터), SkillCard, SkillHeader(글 상단),
+                          #   RelatedSkills(관련 글·시리즈 이동), SeriesList, skills.css(.cs- 접두사), load-skills.ts(draft 처리)
+  route-data.ts           # Starlight 라우트 미들웨어: Coding Skills ↔ 다른 분야 사이의 이전/다음 페이지 링크를 끊음
   components/roadmap/LearningRoadmap.astro  # 로드맵 UI (검색·필터·아코디언·진행률), 분야 공통
   components/lecture/     # 강의 공통: LectureHeader(분야/Part/Lecture·난이도·시간), NextLecture(다음 강의·공개 상태),
                           #   FlowSteps(세로 흐름도, 단계별 detail 선택), ConceptCards·ConceptCard(개념 카드), load-lecture.ts
@@ -107,6 +114,8 @@ src/
                           #   basics/why-quantum-mechanics.mdx = 1강 '양자역학은 왜 탄생했을까?' (공개)
     optical/              # index.mdx = 광학 계측 로드맵, simulator-project/index.mdx = Optical Metrology Simulator Project
     mesh-generation/      # index(메인), roadmap, papers/(목록·리뷰), algorithms/, experiments/(목록·보고서), notebook/(목록·노트), frontier
+    coding-skills/        # 부록: index(메인), cpp/(index, legacy-to-modern), python, java, backend/(index, flask, nodejs, spring-boot),
+                          #   tools, cheatsheets, posts/<파일명>.mdx = 글 (첫 글을 쓸 때 posts/ 생성)
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
   styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
@@ -114,6 +123,7 @@ public/                   # 정적 파일 (favicon.svg), code/<분야>/ = 다운
 lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md, fem/lecture-01.md,
                           #   quantum-mechanics/lecture-XX.md). 강의 본문의 기준이며 사이트 빌드에는 쓰지 않는다
 quantum-curriculum-guide.md, claude-quantum-site-update-prompt.md  # 양자컴퓨팅 교육과정 개편 가이드·사이트 수정 프롬프트 (루트에 보존)
+coding-skills-guide.md    # Coding Skills 글 작성 가이드: 메타데이터, 템플릿 3종, 분류 추가, 공개 절차
 ```
 
 ### 새 파일 배치 규칙 (디렉터리가 없으면 처음 필요할 때 만든다)
@@ -125,7 +135,7 @@ quantum-curriculum-guide.md, claude-quantum-site-update-prompt.md  # 양자컴�
 | 전체 실행 Python 코드 (다운로드용) | `public/code/<분야>/<주제>.py` | `public/code/numerical/bisection.py` |
 | 강의 이미지 | `src/assets/<분야>/` | `src/assets/fem/mesh-1d.png` |
 
-- 분야 디렉터리: `numerical`, `fem`, `quantum`, `optical`, `mesh-generation`
+- 분야 디렉터리: `numerical`, `fem`, `quantum`, `optical`, `mesh-generation`, 부록 `coding-skills`
 - 파일명은 **영문 소문자와 하이픈**을 사용한다(kebab-case). 컴포넌트 파일만 PascalCase를 허용한다.
 - 인터랙티브 컴포넌트를 쓰는 페이지는 `.mdx`로 작성한다.
 
@@ -134,6 +144,8 @@ quantum-curriculum-guide.md, claude-quantum-site-update-prompt.md  # 양자컴�
 - 강의형 네 분야는 `roadmapSidebar()`가 로드맵 데이터에서 자동 생성한다(로드맵 링크 + 고정 링크 + 공개 강의, Part별 그룹). 직접 편집하지 않는다.
 - 프로젝트 페이지는 `extraItems`로 넣는다: FEM은 'FEM Solver Project', 양자컴퓨팅은 'Quantum Simulator Project', 광학 계측은 'Optical Metrology Simulator Project'.
 - 메시 생성 연구는 `researchSidebar()`가 고정 메뉴 7개와 리뷰 페이지가 있는 논문·연구 노트만 자동으로 넣는다.
+- Coding Skills는 `codingSkillsSidebar()`가 '부록: Coding Skills' 그룹(접힘)에 고정 메뉴만 넣는다. 글은 사이드바에 넣지 않고 아카이브 검색으로 찾는다.
+- 사이드바가 하나로 이어져 있어도 `src/route-data.ts`가 Coding Skills와 다른 분야 사이의 이전/다음 페이지 링크를 끊는다.
 
 ### 로드맵 강의 공개 절차 (네 분야 공통)
 
@@ -191,6 +203,20 @@ quantum-curriculum-guide.md, claude-quantum-site-update-prompt.md  # 양자컴�
 - **Stage 8·9**: 고정 목록이 아니다. 조사 → 원 논문 확인 → 분석 → 고전 알고리즘과 비교 → 가치·구현 가능성 검토 → **사용자와 방향 논의** → 대상 확정 → 노트·로드맵 갱신 순서로 진행한다. AI가 더 우수하다고 가정하지 않는다.
 - 범위 밖: 상용 메시 소프트웨어의 내부 알고리즘·제품 비교·채택 기술 조사.
 - Interactive Explorer 5종(DelaunayExplorer 등)은 계획만 있다. 구현하면 `src/components/mesh/`에 만들고 status를 올린다.
+
+### Coding Skills 운영 절차 (부록)
+
+순서대로 수강하는 교육과정이 아니라 **짧고 독립적인 실무 예제(Practical Coding Recipe)를 쌓는 아카이브**이다. 자세한 형식은 루트의 `coding-skills-guide.md`를 따른다.
+
+- **언어별 전문성 우선**: 각 언어에 맞는 실무 문제를 그 언어의 현대적인 방식으로 다룬다. 같은 기능의 다중 언어 비교 글, 언어별 코드 탭, `crossLanguageGroup` 같은 비교 전용 메타데이터는 만들지 않는다. 다른 언어 글은 일반 관련 글(`related`)로만 연결한다.
+- **글 추가**: `src/content/docs/coding-skills/posts/<파일명>.mdx` 하나만 만든다. frontmatter `skill` 객체(id·section·kind·category·tags·difficulty·publishedAt 등)에서 목록·검색·카테고리·최근 글·관련 글·시리즈가 자동으로 만들어진다. 목록 페이지나 홈을 직접 고치지 않는다.
+- 본문은 `<SkillHeader id="…" />`로 시작하고 `<RelatedSkills id="…" />`로 끝낸다. 템플릿: recipe(Problem → Quick Solution → How It Works → Run & Output → Practical Notes → Alternatives → References), legacy-modern(Legacy to Modern C++ 시리즈 전용), cheatsheet.
+- **URL·id**: URL = 파일명(`/coding-skills/posts/<파일명>/`), `skill.id` = 관련 글 연결 키. 공개 후 둘 다 바꾸지 않는다(파일을 옮기면 redirects 추가).
+- **공개**: `draft` 값으로만 정한다(`publishedAt`으로 자동 공개하지 않음). 운영 빌드에서 draft 글은 페이지·목록·검색·관련 글·시리즈에서 모두 빠지고, 개발 서버에서는 'Draft' 배지로 보인다. 원고 승인 → `draft: true`로 구현 → 사용자 공개 승인 → draft 제거.
+- 승인된 원고는 `lecture-source/coding-skills/<skill.id>.md`에 보관한다. 본문의 실행 결과는 실제로 실행한 값만 싣는다.
+- **분류 추가**: 태그·카테고리·프레임워크·시리즈는 `src/data/coding-skills.ts`에 추가한다. 목록에 없는 값, 없는 related id, id 중복, backend 글의 framework 누락 등은 빌드가 실패한다(draft 글 포함).
+- 카테고리 페이지의 '다룰 주제'는 링크 없는 안내 문구이다. 작성하지 않은 글을 공개 글처럼 표시하지 않는다.
+- 검색·필터는 정적 메타데이터로 브라우저에서 처리한다(제목·설명·언어·프레임워크·카테고리·태그). 본문 전문 검색은 Starlight 검색(Pagefind)이 맡고, 목록 페이지는 `pagefind: false`이다.
 
 ### 알려진 사항 (임의로 고치지 않음)
 
@@ -325,9 +351,9 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 
 ## 7. 디자인 원칙
 
-- 현재 홈페이지 디자인(`index.mdx`, `custom.css`의 카드 레이아웃)을 유지한다. 학습 분야 카드는 데스크톱·태블릿 2열(강의 4개 2×2 + 연구 카드 전체 폭 `learning-card--wide`), 모바일 1열이다.
+- 현재 홈페이지 디자인(`index.mdx`, `custom.css`의 카드 레이아웃)을 유지한다. 학습 분야 카드는 데스크톱·태블릿 2열(강의 4개 2×2 + 연구 카드 전체 폭 `learning-card--wide`), 모바일 1열이다. 그 아래 'Developer Resources' 영역에 Coding Skills 카드(전체 폭, Appendix 배지)를 둔다.
 - 간결하고 현대적인 교육 플랫폼 디자인을 지향하며, 수식과 코드의 가독성을 우선한다.
-- 분야별 색상을 일관되게 사용한다: 수치해석 `#2563eb`(파랑), FEM `#9333ea`(보라), 양자컴퓨팅 `#16a34a`(초록), 광학 계측 `#ea580c`(주황), 메시 생성 연구 `#0891b2`(청록)
+- 분야별 색상을 일관되게 사용한다: 수치해석 `#2563eb`(파랑), FEM `#9333ea`(보라), 양자컴퓨팅 `#16a34a`(초록), 광학 계측 `#ea580c`(주황), 메시 생성 연구 `#0891b2`(청록), 부록 Coding Skills `#475569`(슬레이트, 다크 모드 `#94a3b8`)
 - 색상, 테두리, 배경은 가능한 한 Starlight CSS 변수(`--sl-color-*`)를 사용해 **다크 모드와 호환**되게 한다.
 - PC, 태블릿(≤900px), 모바일(≤600px)에서 모두 확인한다. 기존 브레이크포인트를 따른다.
 - 컴포넌트 전용 스타일은 컴포넌트 안의 scoped `<style>`에 둔다. `custom.css`는 전역에 영향을 주므로, 수정하기 전에 다른 페이지(특히 홈)에 미치는 영향을 검토한다.

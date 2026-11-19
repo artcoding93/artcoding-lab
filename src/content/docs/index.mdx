@@ -96,3 +96,33 @@ import { Icon } from '@astrojs/starlight/components';
     <span class="card-arrow">연구 둘러보기 →</span>
   </a>
 </div>
+
+<section class="dev-resources" aria-labelledby="developer-resources">
+  <h2 id="developer-resources">Developer Resources</h2>
+  <p class="dev-resources__intro">학습 분야와 별도로 운영하는 부록형 개발 자료실입니다.</p>
+
+  <a class="learning-card skills learning-card--wide" href="/coding-skills/">
+    <div class="learning-icon">
+      {/* Lucide 'code-xml' 아이콘 (ISC License) */}
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m18 16 4-4-4-4" />
+        <path d="m6 8-4 4 4 4" />
+        <path d="m14.5 4-5 16" />
+      </svg>
+    </div>
+    <h3>Coding Skills <span class="card-badge">Appendix</span></h3>
+    <p class="skills-subtitle" lang="en">Practical Programming &amp; Development Archive</p>
+    <p>
+      개발하면서 자주 사용하는 기능과 최신 프로그래밍 언어·프레임워크 활용법을
+      짧은 예제로 정리하는 실무 개발 아카이브
+    </p>
+    <ul class="skills-chips" aria-label="다루는 분야">
+      <li>Modern C++</li>
+      <li>Python</li>
+      <li>Java</li>
+      <li>Backend &amp; Frameworks</li>
+      <li>Developer Tools</li>
+    </ul>
+    <span class="card-arrow">아카이브 둘러보기 →</span>
+  </a>
+</section>

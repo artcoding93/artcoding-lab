@@ -11,6 +11,8 @@ import { quantumRoadmap } from './src/data/quantum-roadmap.ts';
 import { opticalRoadmap } from './src/data/optical-roadmap.ts';
 import { researchSidebar } from './src/lib/research.ts';
 import { meshResearch } from './src/data/mesh-research.ts';
+import { codingSkillsSidebar } from './src/lib/coding-skills.ts';
+import { codingSkills } from './src/data/coding-skills.ts';
 
 export default defineConfig({
   // 이동한 페이지의 이전 URL → 새 URL (외부 링크·북마크 보존)
@@ -35,6 +37,9 @@ export default defineConfig({
 
       // 사용자 정의 CSS (KaTeX 스타일 포함)
       customCss: ['katex/dist/katex.min.css', './src/styles/custom.css'],
+
+      // 부록(Coding Skills)과 다른 분야 사이의 이전/다음 페이지 링크를 끊는다 (src/route-data.ts)
+      routeMiddleware: './src/route-data.ts',
       
       defaultLocale: 'root',
       locales: {
@@ -66,6 +71,8 @@ export default defineConfig({
         }),
         // 메시 생성 연구: 고정 메뉴 + 리뷰 페이지가 있는 논문·연구 노트만 자동 표시 (src/data/mesh-*.ts 기준)
         researchSidebar(meshResearch, '메시 생성 알고리즘 연구'),
+        // 부록: Coding Skills (실무 개발 아카이브). 고정 메뉴만 표시하고 글은 아카이브 검색으로 찾는다 (src/data/coding-skills.ts)
+        codingSkillsSidebar(codingSkills, '부록: Coding Skills'),
       ],
     }),
   ],

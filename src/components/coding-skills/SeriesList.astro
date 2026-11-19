@@ -1,0 +1,50 @@
+---
+// 특별 시리즈 목차 (order 순). 보이는 글만 표시한다 (운영 빌드에서는 draft 글 제외).
+// 사용법 (MDX): <SeriesList series="legacy-to-modern-cpp" />
+import { codingSkills } from '../../data/coding-skills';
+import { loadSkills } from './load-skills';
+import './skills.css';
+
+interface Props {
+  series: string;
+}
+
+const def = codingSkills.series.find((s) => s.id === Astro.props.series);
+if (!def) throw new Error(`[coding-skills] 시리즈 '${Astro.props.series}'가 src/data/coding-skills.ts에 없다`);
+const items = (await loadSkills())
+  .filter((s) => s.series?.def.id === def.id)
+  .sort((a, b) => a.series!.order - b.series!.order);
+---
+
+<div class="cs not-content">
+  <p class="cs-section-intro">{def.summary}</p>
+  <div class="cs-heading">
+    <h2>시리즈 목차</h2>
+    {items.length > 0 && <p>글 {items.length}개</p>}
+  </div>
+  {
+    items.length === 0 ? (
+      <div class="cs-empty">
+        <p>아직 공개된 시리즈 글이 없습니다. 검토를 마친 글부터 순서대로 추가됩니다.</p>
+      </div>
+    ) : (
+      <ol class="cs-series">
+        {items.map((s, i) => (
+          <li data-skill={s.id}>
+            <span class="cs-series__num" aria-hidden="true">{i + 1}</span>
+            <div>
+              <a href={s.href}>{s.title}</a>
+              {s.draft && <span class="cs-badge cs-badge--draft" style="margin-left: 0.4rem">Draft</span>}
+              <p>{s.description}</p>
+              <p>
+                {[s.languageVersion, s.difficulty.label, s.updatedAt ? `수정 ${s.updatedAt}` : `게시 ${s.publishedAt}`]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+</div>

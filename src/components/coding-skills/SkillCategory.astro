@@ -1,0 +1,98 @@
+---
+// 카테고리 페이지: 섹션 소개 + 다룰 주제(링크 없는 안내) + (C++: 시리즈 카드 / Backend: 프레임워크 카드) + 목록·검색.
+// 사용법 (MDX):
+//   <SkillCategory section="cpp" />            언어·도구 섹션
+//   <SkillCategory framework="flask" />        backend 프레임워크
+//   <SkillCategory kind="cheatsheet" />        모든 섹션의 Cheat Sheet
+import { codingSkills } from '../../data/coding-skills';
+import { loadSkills, pageHref } from './load-skills';
+import SkillArchive from './SkillArchive.astro';
+import './skills.css';
+
+interface Props {
+  section?: string;
+  framework?: string;
+  kind?: 'cheatsheet';
+}
+
+const { section: sectionId, framework: frameworkId, kind } = Astro.props;
+const all = await loadSkills();
+const base = codingSkills.basePath;
+
+const section = sectionId ? codingSkills.sections.find((s) => s.id === sectionId) : undefined;
+const framework = frameworkId ? codingSkills.frameworks.find((f) => f.id === frameworkId) : undefined;
+if ((sectionId && !section) || (frameworkId && !framework) || [section, framework, kind].filter(Boolean).length !== 1) {
+  throw new Error(`[coding-skills] SkillCategory에는 section, framework, kind 중 하나만 올바르게 지정한다 (${JSON.stringify(Astro.props)})`);
+}
+
+const skills = section
+  ? all.filter((s) => s.section.id === section.id)
+  : framework
+    ? all.filter((s) => s.framework?.id === framework.id)
+    : all.filter((s) => s.kind.id === 'cheatsheet');
+
+const summary = section?.summary ?? framework?.summary ?? 'Modern C++, Python, Java, 프레임워크, 개발 도구의 자주 쓰는 문법·API·명령어를 빠르게 확인하는 요약 자료입니다. 각 Cheat Sheet는 해당 카테고리 목록에도 함께 표시됩니다.';
+const topics = section?.topics;
+const series = section ? codingSkills.series.filter((s) => s.section === section.id) : [];
+const frameworks = section?.id === 'backend' ? codingSkills.frameworks.filter((f) => f.hasPage) : [];
+const label = section?.title ?? framework?.title ?? 'Cheat Sheet';
+---
+
+<div class="cs not-content">
+  <p class="cs-section-intro">{summary}</p>
+  {
+    topics && (
+      <div class="cs-topics">
+        <p class="cs-topics__title">이 카테고리에서 다룰 주제 (글이 공개되면 아래 목록에 추가됩니다)</p>
+        <ul>
+          {topics.map((t) => (
+            <li>{t}</li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    series.map((s) => {
+      const count = all.filter((x) => x.series?.def.id === s.id).length;
+      return (
+        <a class="cs-feature" href={pageHref(s.page)} style="margin-top: 1rem">
+          <p class="cs-feature__label">Special Series</p>
+          <h3>{s.title}</h3>
+          <p>{s.summary}</p>
+          <p style="margin-top: 0.4rem; font-weight: 600">{count > 0 ? `글 ${count}개 · 목차 보기 →` : '첫 글 준비 중 · 시리즈 소개 보기 →'}</p>
+        </a>
+      );
+    })
+  }
+
+  {
+    frameworks.length > 0 && (
+      <>
+        <div class="cs-heading">
+          <h2>Frameworks</h2>
+        </div>
+        <div class="cs-categories">
+          {frameworks.map((f) => {
+            const count = all.filter((s) => s.framework?.id === f.id).length;
+            return (
+              <a class="cs-category" href={pageHref(`${base}/backend/${f.id}`)}>
+                <h3>{f.title}</h3>
+                <p>{f.summary}</p>
+                <span class="cs-category__count">
+                  {codingSkills.languages[f.language]} · {count > 0 ? `글 ${count}개` : '첫 글 준비 중'}
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      </>
+    )
+  }
+
+  <div class="cs-heading">
+    <h2>{section?.id === 'backend' ? '전체 Backend 글' : `${label} 글`}</h2>
+  </div>
+</div>
+<SkillArchive skills={skills} emptyText={`아직 공개된 ${label} 글이 없습니다. 검토를 마친 글부터 차례로 추가됩니다.`} />

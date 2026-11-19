@@ -1,0 +1,257 @@
+---
+// 스킬 목록 + 검색·필터·정렬 (정적 데이터, 브라우저에서 거른다. 외부 검색 서버 없음).
+// - 검색 대상: 제목·설명·언어·프레임워크·카테고리·태그 (공백으로 나눈 단어를 모두 포함하는 글)
+// - 필터: 범위(메인 페이지만), 태그(여러 개 선택 = 모두 포함), 난이도 / 정렬: 최근 등록·최근 수정·제목
+// - 상태는 URL 쿼리(?q=&scope=&tag=a,b&level=&sort=)에 반영되어 링크로 공유할 수 있다.
+// - 본문 전체 검색은 Starlight 검색(Pagefind)이 맡는다.
+// 사용법: <SkillArchive skills={목록} showScope />  (목록은 load-skills.ts의 loadSkills()에서 거른 값)
+import { codingSkills } from '../../data/coding-skills';
+import { DIFFICULTIES, type ResolvedSkill } from '../../lib/coding-skills';
+import SkillCard from './SkillCard.astro';
+import './skills.css';
+
+interface Props {
+  skills: ResolvedSkill[];
+  /** 범위 필터(언어·프레임워크·Cheat Sheets) 표시 — 메인 페이지 전체 목록에서만 */
+  showScope?: boolean;
+  /** 이 목록이 비었을 때의 안내 문구 */
+  emptyText?: string;
+  /** 검색창 placeholder */
+  placeholder?: string;
+}
+
+const {
+  skills,
+  showScope = false,
+  emptyText = '아직 공개된 글이 없습니다. 검토를 마친 글부터 차례로 추가됩니다.',
+  placeholder = '제목, 언어, 프레임워크, 태그로 검색 (예: filesystem, JSON)',
+} = Astro.props;
+const uid = `cs-${Math.random().toString(36).slice(2, 8)}`;
+
+// 범위 필터: 프롬프트 지정 순서. type = 비교할 data-* 속성
+const sec = (id: string) => codingSkills.sections.find((s) => s.id === id)!;
+const fw = (id: string) => codingSkills.frameworks.find((f) => f.id === id)!;
+const scopes = [
+  { id: 'cpp', label: sec('cpp').title, type: 'section' },
+  { id: 'python', label: sec('python').title, type: 'section' },
+  { id: 'java', label: sec('java').title, type: 'section' },
+  ...codingSkills.frameworks.map((f) => ({ id: f.id, label: fw(f.id).title, type: 'framework' })),
+  { id: 'tools', label: sec('tools').title, type: 'section' },
+  { id: 'cheatsheet', label: 'Cheat Sheets', type: 'kind' },
+];
+// 실제 글에 쓰인 태그·난이도만 필터로 보여 준다
+const usedTags = codingSkills.tags.filter((t) => skills.some((s) => s.tags.some((x) => x.id === t.id)));
+const usedLevels = Object.entries(DIFFICULTIES).filter(([id]) => skills.some((s) => s.difficulty.id === id));
+---
+
+<div class="cs cs-archive not-content" data-cs-archive>
+  {
+    skills.length === 0 ? (
+      <div class="cs-empty">
+        <p>{emptyText}</p>
+      </div>
+    ) : (
+      <>
+        <div class="cs-filters">
+          <div class="cs-search" role="search">
+            <label for={`${uid}-q`} class="sr-only">스킬 검색</label>
+            <input id={`${uid}-q`} type="search" placeholder={placeholder} autocomplete="off" data-q />
+          </div>
+          {showScope && (
+            <div class="cs-filter-row" role="group" aria-label="범위">
+              <span class="cs-filter-row__label">범위</span>
+              <button type="button" class="cs-chip" aria-pressed="true" data-scope="all">전체</button>
+              {scopes.map((s) => (
+                <button type="button" class="cs-chip" aria-pressed="false" data-scope={s.id} data-scope-type={s.type}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {usedTags.length > 0 && (
+            <div class="cs-filter-row" role="group" aria-label="태그 (여러 개 선택 가능)">
+              <span class="cs-filter-row__label">태그</span>
+              {usedTags.map((t) => (
+                <button type="button" class="cs-chip" aria-pressed="false" data-tag={t.id}>
+                  #{t.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {usedLevels.length > 1 && (
+            <div class="cs-filter-row" role="group" aria-label="난이도">
+              <span class="cs-filter-row__label">난이도</span>
+              <button type="button" class="cs-chip" aria-pressed="true" data-level="all">전체</button>
+              {usedLevels.map(([id, d]) => (
+                <button type="button" class="cs-chip" aria-pressed="false" data-level={id}>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div class="cs-result">
+            <span aria-live="polite" data-result>전체 {skills.length}개</span>
+            <span>
+              <label for={`${uid}-sort`}>정렬 </label>
+              <select id={`${uid}-sort`} class="cs-select" data-sort>
+                <option value="published">최근 등록순</option>
+                <option value="modified">최근 수정순</option>
+                <option value="title">제목순</option>
+              </select>
+            </span>
+          </div>
+        </div>
+        <ul class="cs-list" data-list>
+          {skills.map((s) => (
+            <li>
+              <SkillCard skill={s} />
+            </li>
+          ))}
+        </ul>
+        <div class="cs-empty" data-empty hidden>
+          <p>조건에 맞는 글이 없습니다.</p>
+          <p>
+            검색어나 필터를 바꾸거나 <button type="button" class="cs-button" data-reset>조건 초기화</button>
+          </p>
+        </div>
+      </>
+    )
+  }
+</div>
+
+<script>
+  // 검색어 정규화: 대소문자·공백·하이픈·가운뎃점·괄호·콜론 차이를 무시 (예: 'std::string_view' ↔ 'string view')
+  const normalize = (text: string) =>
+    text
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/[\s\-‐–—_·・‧.,:;'’"()（）[\]/#]/g, '');
+
+  type Item = { li: HTMLLIElement; card: HTMLElement; text: string; tags: string[] };
+
+  function init(root: HTMLElement) {
+    const input = root.querySelector<HTMLInputElement>('[data-q]');
+    if (!input) return; // 글이 없는 목록
+    const list = root.querySelector<HTMLUListElement>('[data-list]')!;
+    const result = root.querySelector<HTMLElement>('[data-result]')!;
+    const empty = root.querySelector<HTMLElement>('[data-empty]')!;
+    const sort = root.querySelector<HTMLSelectElement>('[data-sort]')!;
+    const scopeChips = [...root.querySelectorAll<HTMLButtonElement>('[data-scope]')];
+    const tagChips = [...root.querySelectorAll<HTMLButtonElement>('[data-tag]')];
+    const levelChips = [...root.querySelectorAll<HTMLButtonElement>('[data-level]')];
+    const items: Item[] = [...list.children].map((li) => {
+      const card = li.querySelector<HTMLElement>('[data-skill]')!;
+      return { li: li as HTMLLIElement, card, text: normalize(card.dataset.search ?? ''), tags: (card.dataset.tags ?? '').split(' ') };
+    });
+    const total = items.length;
+
+    const state = { q: '', scope: 'all', tags: new Set<string>(), level: 'all', sort: 'published' };
+
+    const valid = {
+      scope: (v: string) => scopeChips.some((c) => c.dataset.scope === v),
+      tag: (v: string) => tagChips.some((c) => c.dataset.tag === v),
+      level: (v: string) => levelChips.some((c) => c.dataset.level === v),
+      sort: (v: string) => [...sort.options].some((o) => o.value === v),
+    };
+
+    function readUrl() {
+      const p = new URLSearchParams(location.search);
+      state.q = p.get('q') ?? '';
+      const scope = p.get('scope') ?? 'all';
+      state.scope = valid.scope(scope) ? scope : 'all';
+      // 이 목록에 없는 태그(글이 없는 태그)는 무시한다
+      state.tags = new Set((p.get('tag') ?? '').split(',').filter((t) => t && valid.tag(t)));
+      const level = p.get('level') ?? 'all';
+      state.level = valid.level(level) ? level : 'all';
+      const s = p.get('sort') ?? 'published';
+      state.sort = valid.sort(s) ? s : 'published';
+    }
+
+    function writeUrl() {
+      const p = new URLSearchParams(location.search);
+      const set = (key: string, value: string, fallback: string) => (value && value !== fallback ? p.set(key, value) : p.delete(key));
+      set('q', state.q.trim(), '');
+      set('scope', state.scope, 'all');
+      set('tag', [...state.tags].join(','), '');
+      set('level', state.level, 'all');
+      set('sort', state.sort, 'published');
+      const qs = p.toString();
+      history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`);
+    }
+
+    function matchesScope(card: HTMLElement) {
+      if (state.scope === 'all') return true;
+      const chip = scopeChips.find((c) => c.dataset.scope === state.scope)!;
+      const attr = chip.dataset.scopeType as 'section' | 'framework' | 'kind';
+      return card.dataset[attr] === state.scope;
+    }
+
+    function apply(updateUrl = true) {
+      const words = state.q.split(/\s+/).map(normalize).filter(Boolean);
+      let visible = 0;
+      for (const item of items) {
+        const ok =
+          matchesScope(item.card) &&
+          (state.level === 'all' || item.card.dataset.difficulty === state.level) &&
+          [...state.tags].every((t) => item.tags.includes(t)) &&
+          words.every((w) => item.text.includes(w));
+        item.li.hidden = !ok;
+        if (ok) visible++;
+      }
+      // 정렬: DOM 순서를 바꾼다
+      const key = state.sort;
+      const sorted = [...items].sort((a, b) => {
+        const A = a.card.dataset;
+        const B = b.card.dataset;
+        if (key === 'title') return (A.title ?? '').localeCompare(B.title ?? '', 'ko');
+        const field = key === 'modified' ? 'modified' : 'published';
+        return (B[field] ?? '').localeCompare(A[field] ?? '') || (A.title ?? '').localeCompare(B.title ?? '', 'ko');
+      });
+      sorted.forEach((item) => list.appendChild(item.li));
+
+      const filtering = words.length > 0 || state.scope !== 'all' || state.tags.size > 0 || state.level !== 'all';
+      result.textContent = filtering ? `전체 ${total}개 중 ${visible}개 표시` : `전체 ${total}개`;
+      empty.hidden = visible > 0;
+      list.hidden = visible === 0;
+
+      input.value !== state.q && (input.value = state.q);
+      scopeChips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.scope === state.scope)));
+      tagChips.forEach((c) => c.setAttribute('aria-pressed', String(state.tags.has(c.dataset.tag!))));
+      levelChips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.level === state.level)));
+      sort.value = state.sort;
+      if (updateUrl) writeUrl();
+    }
+
+    input.addEventListener('input', () => {
+      state.q = input.value;
+      apply();
+    });
+    scopeChips.forEach((c) => c.addEventListener('click', () => { state.scope = c.dataset.scope!; apply(); }));
+    tagChips.forEach((c) =>
+      c.addEventListener('click', () => {
+        const t = c.dataset.tag!;
+        state.tags.has(t) ? state.tags.delete(t) : state.tags.add(t);
+        apply();
+      }),
+    );
+    levelChips.forEach((c) => c.addEventListener('click', () => { state.level = c.dataset.level!; apply(); }));
+    sort.addEventListener('change', () => { state.sort = sort.value; apply(); });
+    root.querySelector('[data-reset]')!.addEventListener('click', () => {
+      Object.assign(state, { q: '', scope: 'all', tags: new Set<string>(), level: 'all', sort: state.sort });
+      apply();
+      input.focus();
+    });
+
+    // 메인 상단 검색창(SkillsHome)과 연결: 입력하면 이 목록을 거르고 목록 위치로 이동한다
+    document.addEventListener('cs:search', (event) => {
+      state.q = (event as CustomEvent<string>).detail;
+      apply();
+      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    readUrl();
+    apply(false);
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-cs-archive]').forEach(init);
+</script>

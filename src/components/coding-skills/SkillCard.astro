@@ -1,0 +1,48 @@
+---
+// 스킬 글 카드: 제목, 설명, 종류·언어(버전)·프레임워크, 난이도, 태그, 게시·수정일.
+// data-* 속성은 SkillArchive의 검색·필터·정렬에 쓴다.
+import { versionText, type ResolvedSkill } from '../../lib/coding-skills';
+import './skills.css';
+
+interface Props {
+  skill: ResolvedSkill;
+  /** 제목 태그 수준 (목록 위치에 맞춰 조정) */
+  headingLevel?: 3 | 4;
+}
+
+const { skill: s, headingLevel = 3 } = Astro.props;
+const Heading = `h${headingLevel}` as 'h3' | 'h4';
+const languageText = versionText(s.language?.label, s.languageVersion);
+const frameworkText = s.framework ? versionText(s.framework.title, s.frameworkVersion) : undefined;
+---
+
+<article
+  class:list={['cs-card', { 'cs-card--draft': s.draft }]}
+  data-skill={s.id}
+  data-section={s.section.id}
+  data-framework={s.framework?.id ?? ''}
+  data-kind={s.kind.id}
+  data-tags={s.tags.map((t) => t.id).join(' ')}
+  data-difficulty={s.difficulty.id}
+  data-published={s.publishedAt}
+  data-modified={s.modifiedAt}
+  data-title={s.title}
+  data-search={s.searchText}
+>
+  <ul class="cs-card__meta" aria-label="분류">
+    {s.draft && <li class="cs-badge cs-badge--draft">Draft (개발 서버에서만 표시)</li>}
+    {s.kind.id !== 'recipe' && <li class="cs-badge cs-badge--kind">{s.kind.label}</li>}
+    {frameworkText && <li class="cs-badge">{frameworkText}</li>}
+    {languageText && <li class="cs-badge">{languageText}</li>}
+    <li class="cs-badge">{s.difficulty.label}</li>
+  </ul>
+  <Heading class="cs-card__title"><a href={s.href}>{s.title}</a></Heading>
+  <p class="cs-card__desc">{s.description}</p>
+  <ul class="cs-card__tags" aria-label="태그">
+    {s.tags.map((t) => <li class="cs-tag">{t.label}</li>)}
+  </ul>
+  <p class="cs-card__foot">
+    <span>{s.section.title} · {s.category.label}</span>
+    <span>{s.updatedAt ? `수정 ${s.updatedAt}` : `게시 ${s.publishedAt}`}</span>
+  </p>
+</article>

@@ -1,0 +1,125 @@
+---
+// Coding Skills 메인: 소개·검색 → 카테고리 카드 6개 → 최근 등록·최근 수정 → 전체 목록(검색·필터).
+// 글 수·목록은 실제 콘텐츠에서 계산한다 (가짜 예제·통계 없음). 진도율 같은 교육과정 UI는 쓰지 않는다.
+// 사용법 (MDX): <SkillsHome />
+import { codingSkills } from '../../data/coding-skills';
+import { recentlyUpdated } from '../../lib/coding-skills';
+import { loadSkills, pageHref } from './load-skills';
+import SkillArchive from './SkillArchive.astro';
+import SkillCard from './SkillCard.astro';
+import './skills.css';
+
+const RECENT = 6;
+const skills = await loadSkills();
+const recentAdded = skills.slice(0, RECENT);
+const recentUpdated = recentlyUpdated(skills).slice(0, RECENT);
+const base = codingSkills.basePath;
+const section = (id: string) => codingSkills.sections.find((s) => s.id === id)!;
+
+const categories = [
+  ...['cpp', 'python', 'java', 'backend', 'tools'].map((id) => ({
+    title: section(id).title,
+    summary: section(id).summary,
+    href: pageHref(`${base}/${id}`),
+    count: skills.filter((s) => s.section.id === id).length,
+  })),
+  {
+    title: 'Cheat Sheets',
+    summary: '자주 쓰는 문법, API, 명령어를 빠르게 확인하는 요약 자료입니다.',
+    href: pageHref(`${base}/cheatsheets`),
+    count: skills.filter((s) => s.kind.id === 'cheatsheet').length,
+  },
+];
+---
+
+<div class="cs not-content">
+  <section class="cs-hero" aria-label="소개와 검색">
+    <p class="cs-hero__subtitle" lang="en">{codingSkills.subtitle}</p>
+    <p class="cs-hero__intro">
+      {codingSkills.intro}입니다. 순서대로 수강하는 교육과정이 아니라, 필요한 기술을 찾아 바로 활용하는 짧고 독립적인
+      <span lang="en">Practical Coding Recipe</span>를 모아 둡니다.
+    </p>
+    <form class="cs-search" role="search" action={pageHref(base)} method="get" data-cs-hero-search>
+      <label for="cs-hero-q" class="sr-only">스킬 검색</label>
+      <input id="cs-hero-q" name="q" type="search" placeholder="필요한 기술을 검색하세요 (예: pathlib, Stream, REST API)" autocomplete="off" />
+      <button type="submit" class="cs-button">검색</button>
+    </form>
+    <p class="cs-hero__note">
+      목록 검색은 제목·언어·프레임워크·태그를 대상으로 합니다. 본문 전체 검색은 화면 위쪽의 사이트 검색을 이용하세요.
+    </p>
+  </section>
+
+  <div class="cs-heading">
+    <h2>카테고리</h2>
+  </div>
+  <div class="cs-categories">
+    {
+      categories.map((c) => (
+        <a class="cs-category" href={c.href}>
+          <h3>{c.title}</h3>
+          <p>{c.summary}</p>
+          <span class="cs-category__count">{c.count > 0 ? `글 ${c.count}개` : '첫 글 준비 중'}</span>
+        </a>
+      ))
+    }
+  </div>
+
+  {
+    recentAdded.length > 0 && (
+      <>
+        <div class="cs-heading">
+          <h2>Recently Added</h2>
+          <p>최근 등록된 스킬</p>
+        </div>
+        <ul class="cs-list">
+          {recentAdded.map((s) => (
+            <li>
+              <SkillCard skill={s} />
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  {
+    recentUpdated.length > 0 && (
+      <>
+        <div class="cs-heading">
+          <h2>Recently Updated</h2>
+          <p>최근 수정된 스킬</p>
+        </div>
+        <ul class="cs-list">
+          {recentUpdated.map((s) => (
+            <li>
+              <SkillCard skill={s} />
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  <div class="cs-heading" id="all-skills">
+    <h2>Browse All Skills</h2>
+    <p>전체 스킬 목록</p>
+  </div>
+</div>
+<SkillArchive
+  skills={skills}
+  showScope
+  emptyText="아직 공개된 스킬 글이 없습니다. 검토를 마친 글부터 차례로 추가됩니다."
+/>
+
+<script>
+  // 상단 검색창: 아래 전체 목록의 검색과 연결한다 (JS가 없으면 ?q= 로 이동해 같은 결과를 보여 준다)
+  const form = document.querySelector<HTMLFormElement>('[data-cs-hero-search]');
+  const input = form?.querySelector<HTMLInputElement>('input');
+  if (form && input) {
+    input.value = new URLSearchParams(location.search).get('q') ?? '';
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      document.dispatchEvent(new CustomEvent('cs:search', { detail: input.value }));
+    });
+  }
+</script>

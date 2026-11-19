@@ -147,3 +147,60 @@
 .lab-intro {
   margin-top: 0;
 }
+/* ── Developer Resources (홈 하단 부록 영역: Coding Skills) ──
+   학습 분야와 구분되는 부록 영역. 색은 슬레이트 #475569 (다크 모드 #94a3b8) */
+.dev-resources {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--sl-color-gray-5);
+}
+
+.dev-resources h2 {
+  margin: 0;
+}
+
+.dev-resources__intro {
+  margin: 0.4rem 0 1.5rem;
+  color: var(--sl-color-gray-3);
+  font-size: 0.95rem;
+}
+
+.dev-resources .learning-card {
+  margin-top: 0;
+}
+
+.skills .learning-icon {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+:root[data-theme='dark'] .skills .learning-icon {
+  background: color-mix(in srgb, #94a3b8 18%, transparent);
+  color: #94a3b8;
+}
+
+.learning-card p.skills-subtitle {
+  flex: none;
+  margin-top: -0.6rem;
+  color: var(--sl-color-gray-3);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.skills-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skills-chips li {
+  margin: 0;
+  padding: 0.15rem 0.65rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 999px;
+  color: var(--sl-color-gray-2);
+  font-size: 0.8rem;
+}

@@ -1,0 +1,471 @@
+---
+// 홈 화면 (Academic Research Dashboard)
+// - 학습·연구 분야 카드 6개(3열 × 2행)와 Developer Resources(부록 Coding Skills)를 그린다.
+// - 카드 하단의 규모 정보(Part·강의 수, 연구 Stage·논문 수)는 데이터 파일에서 계산한다. 숫자를 직접 쓰지 않는다.
+// - 스타일은 이 컴포넌트 안에만 둔다. 홈 전용 콘텐츠 폭과 제목(H1) 크기 조정도 .home-dash가 있는 페이지에만 적용된다.
+import type { RoadmapDef } from '../../lib/roadmap';
+import { numericalRoadmap } from '../../data/numerical-roadmap';
+import { femRoadmap } from '../../data/fem-roadmap';
+import { quantumRoadmap } from '../../data/quantum-roadmap';
+import { opticalRoadmap } from '../../data/optical-roadmap';
+import { aiRoadmap } from '../../data/ai-roadmap';
+import { meshResearch } from '../../data/mesh-research';
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** 강의형 분야: 'N Parts · M Lectures' */
+const curriculumScale = (roadmap: RoadmapDef) => {
+  const lectures = roadmap.parts.reduce((sum, part) => sum + part.lectures.length, 0);
+  return `${plural(roadmap.parts.length, 'Part', 'Parts')} · ${plural(lectures, 'Lecture', 'Lectures')}`;
+};
+
+/** 연구 분야: 'N Research Stages · M Papers' (검증 대기 논문 pending은 제외) */
+const researchScale = `${plural(meshResearch.stages.length, 'Research Stage', 'Research Stages')} · ${plural(
+  meshResearch.papers.length,
+  'Paper',
+  'Papers',
+)}`;
+
+interface Field {
+  key: string;
+  href: string;
+  en: string;
+  title: string;
+  description: string;
+  scale: string;
+  badge?: string;
+}
+
+const fields: Field[] = [
+  {
+    key: 'numerical',
+    href: '/numerical/',
+    en: 'Numerical Analysis',
+    title: '수치해석',
+    description: '비선형 방정식, 수치적분, 미분방정식의 해법을 Python 구현과 그래프로 학습합니다.',
+    scale: curriculumScale(numericalRoadmap),
+  },
+  {
+    key: 'fem',
+    href: '/fem/',
+    en: 'Finite Element Method',
+    title: '유한요소법 (FEM)',
+    description: '메시 생성과 요소 행렬 조립부터 해석, 결과 시각화까지 단계적으로 구현합니다.',
+    scale: curriculumScale(femRoadmap),
+  },
+  {
+    key: 'quantum',
+    href: '/quantum/',
+    en: 'Quantum Computing',
+    title: '양자컴퓨팅',
+    description: '양자 현상과 쉬운 수학에서 출발해 큐비트, 양자회로, 양자 알고리즘까지 학습합니다.',
+    scale: curriculumScale(quantumRoadmap),
+  },
+  {
+    key: 'optical',
+    href: '/optical/',
+    en: 'Optical Metrology & Computational Imaging',
+    title: '광학 계측과 계산 영상',
+    description: '간섭·반사·초점·단층 영상의 원리와 측정 신호의 역해석을 Python으로 구현합니다.',
+    scale: curriculumScale(opticalRoadmap),
+  },
+  {
+    key: 'ai',
+    href: '/ai/',
+    en: 'Artificial Intelligence',
+    title: '인공지능',
+    description: '수학적 기초부터 머신러닝·딥러닝·생성형 AI·과학적 AI 응용까지 학습합니다.',
+    scale: curriculumScale(aiRoadmap),
+  },
+  {
+    key: 'mesh',
+    href: '/mesh-generation/',
+    en: 'Mesh Generation Research',
+    title: '메시 생성 알고리즘 연구',
+    description: '고전 삼각분할부터 AI 기반 메시 생성까지 주요 논문을 코드로 재현합니다.',
+    scale: researchScale,
+    badge: 'Research Lab',
+  },
+];
+
+const skillTopics = [
+  { label: 'Modern C++', href: '/coding-skills/cpp/' },
+  { label: 'Python', href: '/coding-skills/python/' },
+  { label: 'Java', href: '/coding-skills/java/' },
+  { label: 'Backend Frameworks', href: '/coding-skills/backend/' },
+  { label: 'Practical Code Recipes', href: '/coding-skills/' },
+];
+---
+
+<div class="home-dash not-content">
+  <header class="hd-head">
+    <p class="hd-head__sub" lang="en">Computational Science &amp; Engineering</p>
+    <p class="hd-head__intro">
+      <strong>공학을 코드로 이해하다.</strong>{' '}
+      수학적·공학적 이론을 직접 구현하고, 시각화와 수치 실험으로 검증하는 학습·연구 플랫폼입니다.
+    </p>
+  </header>
+
+  <section class="hd-section" aria-labelledby="hd-areas">
+    <h2 id="hd-areas" class="hd-section__title" lang="en">Research &amp; Learning Areas</h2>
+    <ul class="hd-grid">
+      {
+        fields.map((field) => (
+          <li>
+            <a class:list={['hd-card', `hd-card--${field.key}`]} href={field.href}>
+              <span class="hd-card__en" lang="en">
+                <span class="hd-card__mark" aria-hidden="true" />
+                {field.en}
+              </span>
+              <h3 class="hd-card__title">
+                {field.title}
+                {field.badge && (
+                  <span class="hd-badge" lang="en">
+                    {field.badge}
+                  </span>
+                )}
+              </h3>
+              <p class="hd-card__desc">{field.description}</p>
+              <span class="hd-card__meta">
+                <span lang="en">{field.scale}</span>
+                <span class="hd-card__arrow" aria-hidden="true">
+                  →
+                </span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="hd-section hd-dev" aria-labelledby="hd-dev">
+    <h2 id="hd-dev" class="hd-section__title" lang="en">
+      Developer Resources <span class="hd-badge">Appendix</span>
+    </h2>
+    <div class="hd-dev__box">
+      <div class="hd-dev__lead">
+        <a class="hd-dev__name" href="/coding-skills/">Coding Skills</a>
+        <span class="hd-dev__sub" lang="en">Practical Programming &amp; Development Archive</span>
+      </div>
+      <ul class="hd-dev__topics" aria-label="Coding Skills 주제">
+        {
+          skillTopics.map((topic) => (
+            <li>
+              <a href={topic.href} lang="en">
+                {topic.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</div>
+
+<style>
+  /* ── 홈 전용 페이지 조정 (.home-dash가 있는 페이지에만 적용) ── */
+  /* 콘텐츠 최대 너비: Starlight splash 기본 67.5rem → 78rem(약 1,248px). 다른 페이지는 그대로이다. */
+  :global(:root:has(.home-dash)) {
+    --sl-content-width: 78rem;
+    --hd-navy: #1e3a5f;
+    --hd-field-skills: #475569;
+  }
+  :global(:root[data-theme='dark']:has(.home-dash)) {
+    --hd-navy: #93c5fd;
+    --hd-field-skills: #94a3b8;
+  }
+  /* 제목(H1)·본문 패널: Hero 대신 Starlight 기본 제목을 작게 쓰고, 두 패널을 하나의 머리말처럼 잇는다 */
+  :global(:root:has(.home-dash) main .content-panel) {
+    padding-block: 0.75rem;
+  }
+  :global(:root:has(.home-dash) main .content-panel:has(#_top)) {
+    padding-top: 1.75rem;
+    padding-bottom: 0;
+  }
+  :global(:root:has(.home-dash) main .content-panel + .content-panel) {
+    border-top: 0;
+  }
+  :global(:root:has(.home-dash) main h1#_top) {
+    margin: 0;
+    font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2rem);
+    letter-spacing: -0.01em;
+  }
+
+  /* ── 머리말 ── */
+  .home-dash {
+    color: var(--sl-color-text);
+  }
+  .hd-head {
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--sl-color-gray-5);
+  }
+  .hd-head__sub {
+    margin: 0;
+    color: var(--hd-navy);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .hd-head__intro {
+    margin: 0.45rem 0 0;
+    max-width: 52rem;
+    color: var(--sl-color-gray-2);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    word-break: keep-all;
+  }
+  .hd-head__intro strong {
+    color: var(--sl-color-white);
+    font-weight: 600;
+  }
+
+  /* ── 섹션 ── */
+  .hd-section {
+    margin-top: 1.25rem;
+  }
+  .hd-section__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.65rem;
+    color: var(--sl-color-gray-3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  /* ── 분야 카드: 데스크톱 3열, 태블릿 2열, 모바일 1열 ── */
+  .hd-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hd-grid > li {
+    display: flex;
+    margin: 0;
+    min-width: 0;
+  }
+  .hd-card {
+    --hd-field: var(--hd-navy);
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0.85rem 1rem 0.8rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 6px;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    text-decoration: none;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+  .hd-card:hover {
+    border-color: var(--hd-navy);
+    background: var(--sl-color-bg-nav);
+  }
+  .hd-card:focus-visible,
+  .hd-dev a:focus-visible {
+    outline: 2px solid var(--hd-navy);
+    outline-offset: 2px;
+  }
+  .hd-card__en {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--sl-color-gray-3);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.035em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+  /* 분야 색 표식 (8px) — 분야 색은 여기에만 쓴다 */
+  .hd-card__mark {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 1px;
+    background: var(--hd-field);
+  }
+  .hd-card--numerical {
+    --hd-field: #2563eb;
+  }
+  .hd-card--fem {
+    --hd-field: #9333ea;
+  }
+  .hd-card--quantum {
+    --hd-field: #16a34a;
+  }
+  .hd-card--optical {
+    --hd-field: #ea580c;
+  }
+  .hd-card--ai {
+    --hd-field: #db2777;
+  }
+  .hd-card--mesh {
+    --hd-field: #0891b2;
+  }
+  .hd-card__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.1rem 0 0;
+    color: var(--sl-color-white);
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .hd-card__desc {
+    flex: 1;
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    word-break: keep-all;
+  }
+  .hd-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+    color: var(--sl-color-gray-3);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .hd-card__arrow {
+    color: var(--sl-color-gray-3);
+    transition:
+      color 0.15s,
+      transform 0.15s;
+  }
+  .hd-card:hover .hd-card__arrow {
+    color: var(--hd-navy);
+    transform: translateX(2px);
+  }
+  .hd-badge {
+    display: inline-block;
+    padding: 0 0.45rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    color: var(--sl-color-gray-3);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    text-transform: none;
+  }
+
+  /* ── Developer Resources (부록: Coding Skills) ── */
+  .hd-dev__box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-left: 3px solid var(--hd-field-skills);
+    border-radius: 6px;
+  }
+  .hd-dev__lead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.75rem;
+  }
+  .hd-dev__name {
+    color: var(--sl-color-white);
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .hd-dev__name:hover {
+    color: var(--hd-navy);
+    text-decoration: underline;
+  }
+  .hd-dev__sub {
+    color: var(--sl-color-gray-3);
+    font-size: 0.8rem;
+  }
+  .hd-dev__topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hd-dev__topics li {
+    margin: 0;
+  }
+  .hd-dev__topics a {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 4px;
+    color: var(--sl-color-gray-2);
+    font-size: 0.78rem;
+    text-decoration: none;
+    transition:
+      border-color 0.15s,
+      color 0.15s;
+  }
+  .hd-dev__topics a:hover {
+    border-color: var(--hd-navy);
+    color: var(--hd-navy);
+  }
+
+  /* 좁은 데스크톱(3열 유지): 긴 영문 분야명이 한 줄에 들어가도록 자간만 줄인다 */
+  @media (min-width: 901px) and (max-width: 1150px) {
+    .hd-grid {
+      gap: 0.6rem;
+    }
+    .hd-card {
+      padding-inline: 0.75rem;
+    }
+    .hd-card__en {
+      font-size: 0.66rem;
+      letter-spacing: 0.01em;
+    }
+  }
+
+  /* 태블릿 */
+  @media (max-width: 900px) {
+    .hd-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* 모바일 */
+  @media (max-width: 600px) {
+    .hd-grid {
+      grid-template-columns: 1fr;
+    }
+    .hd-head__intro {
+      font-size: 0.93rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hd-card,
+    .hd-card__arrow,
+    .hd-dev__topics a {
+      transition: none;
+    }
+  }
+</style>

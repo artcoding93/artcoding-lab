@@ -86,7 +86,8 @@ const stageOf = new Map(r.stages.map((s) => [s.id, s]));
 </section>
 
 <style>
-  .rs-library__summary {
+  /* research.css의 .rs-card 배경을 덮어쓴다. CSS 번들 순서에 의존하지 않도록 선택자를 더 구체적으로 쓴다. */
+  .rs-card.rs-library__summary {
     background: var(--rs-surface);
   }
   .rs-library__stats {
@@ -130,7 +131,8 @@ const stageOf = new Map(r.stages.map((s) => [s.id, s]));
   .rs-era li {
     flex: 1 0 6.5rem;
   }
-  .rs-era a {
+  /* research.css의 .rs a(링크 색)를 덮어쓴다. 번들 순서에 의존하지 않도록 li > a로 구체화한다. */
+  .rs-era li > a {
     position: relative;
     display: flex;
     flex-direction: column;

@@ -105,8 +105,10 @@ src/
                           #   EnergyLevelsFigure, WaveParticleFigure, BitQubitFigure, render-*.ts(서버·브라우저 공용), quantum-plot.css(.np--quantum)
   lib/quantum/            # blackbody.ts(플랑크·레일리–진스·빈, SI 단위), photoelectric.ts(K_max 판정) — Python 독립 계산과 일치 검증
   components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
+  components/home/HomeDashboard.astro  # 홈 화면(Academic Research Dashboard): 머리말, 분야 카드 6개, Developer Resources.
+                          #   카드 규모 정보(Part·강의 수, Stage·논문 수)는 로드맵·연구 데이터에서 계산, 홈 전용 스타일 포함
   content/docs/
-    index.mdx             # 홈 (template: splash, 학습 분야 카드)
+    index.mdx             # 홈 (template: splash, hero 없음 — 본문은 <HomeDashboard />)
     numerical/            # index.mdx = 로드맵, fundamentals/introduction.mdx = 1강(공개),
                           #   root-finding/(bisection, newton-raphson) = 임시 페이지(준비 중)
     fem/                  # index.mdx = FEM 로드맵, solver-project/index.mdx = FEM Solver Project,
@@ -119,7 +121,7 @@ src/
     coding-skills/        # 부록: index(메인), cpp/(index, legacy-to-modern), python, java, backend/(index, flask, nodejs, spring-boot),
                           #   tools, cheatsheets, posts/<파일명>.mdx = 글 (첫 글을 쓸 때 posts/ 생성)
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
-  styles/custom.css       # 전역 커스텀 CSS (홈 카드, 분야별 색상, 반응형)
+  styles/custom.css       # 전역 커스텀 CSS (현재 규칙 없음 — 여러 페이지 공통 규칙만 둔다)
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
 public/                   # 정적 파일 (favicon.svg), code/<분야>/ = 다운로드용 전체 코드
 lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md, fem/lecture-01.md,
@@ -378,7 +380,11 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 
 ## 7. 디자인 원칙
 
-- 현재 홈페이지 디자인(`index.mdx`, `custom.css`의 카드 레이아웃)을 유지한다. 학습·연구 분야 카드 6개(수치해석·FEM·양자·광학·AI·메시 연구)는 데스크톱·태블릿 2열 × 3행(모두 같은 크기), 모바일 1열이다. 그 아래 'Developer Resources' 영역에 Coding Skills 카드(전체 폭, Appendix 배지)를 둔다.
+- 홈은 차분한 학술 포털형 대시보드(`src/components/home/HomeDashboard.astro`)이다. 큰 Hero 없이 Starlight 제목(H1 'artcoding Lab') 아래에 'Computational Science & Engineering', 슬로건 '공학을 코드로 이해하다', 한 줄 소개를 둔다.
+  - 분야 카드 6개(수치해석·FEM·양자·광학·AI·메시 연구 순)는 데스크톱 3열 × 2행, 태블릿(≤900px) 2열, 모바일(≤600px) 1열이다. 카드 높이는 약 120~145px(데스크톱·태블릿), 1px 테두리·작은 반경, 아이콘 없이 네이비·슬레이트 계열로 절제한다. 분야 색은 영문 분야명 앞의 8px 표식에만 쓴다.
+  - 카드 하단에는 커리큘럼 규모('12 Parts · 80 Lectures', 메시 연구는 '9 Research Stages · 23 Papers' 형식)를 데이터에서 계산해 표시한다. 숫자를 하드코딩하지 않으며, 공개 강의 수는 홈에 표시하지 않는다.
+  - 그 아래 'Developer Resources'(Appendix 배지)에 Coding Skills를 한 줄 박스로 두고 주제 링크(Modern C++, Python, Java, Backend Frameworks, Practical Code Recipes)를 단다.
+  - 홈만 콘텐츠 최대 너비가 78rem(약 1,248px)이다(`:root:has(.home-dash)`로 한정). 다른 페이지의 폭은 Starlight 기본값을 따른다.
 - 간결하고 현대적인 교육 플랫폼 디자인을 지향하며, 수식과 코드의 가독성을 우선한다.
 - 분야별 색상을 일관되게 사용한다: 수치해석 `#2563eb`(파랑), FEM `#9333ea`(보라), 양자컴퓨팅 `#16a34a`(초록), 광학 계측 `#ea580c`(주황), 인공지능 `#db2777`(핑크), 메시 생성 연구 `#0891b2`(청록), 부록 Coding Skills `#475569`(슬레이트, 다크 모드 `#94a3b8`)
 - 색상, 테두리, 배경은 가능한 한 Starlight CSS 변수(`--sl-color-*`)를 사용해 **다크 모드와 호환**되게 한다.

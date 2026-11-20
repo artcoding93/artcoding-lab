@@ -105,8 +105,10 @@ src/
                           #   EnergyLevelsFigure, WaveParticleFigure, BitQubitFigure, render-*.ts(서버·브라우저 공용), quantum-plot.css(.np--quantum)
   lib/quantum/            # blackbody.ts(플랑크·레일리–진스·빈, SI 단위), photoelectric.ts(K_max 판정) — Python 독립 계산과 일치 검증
   components/project/     # ProjectRoadmap(진행률·파이프라인·타임라인), ProjectComponentPlan, ProjectHero(상단 소개), load-project.ts
-  components/home/HomeDashboard.astro  # 홈 화면(Academic Research Dashboard): 머리말, 분야 카드 6개, Developer Resources.
+  components/home/HomeDashboard.astro  # 홈 화면(Academic Research Dashboard): 소개 한 줄, 분야 카드 6개, Developer Resources.
                           #   카드 규모 정보(Part·강의 수, Stage·논문 수)는 로드맵·연구 데이터에서 계산, 홈 전용 스타일 포함
+  components/overrides/PageTitle.astro  # Starlight PageTitle 오버라이드: 홈에서만 영문 문구 + H1 '공학을 코드로 이해하다.',
+                          #   다른 페이지는 Starlight 기본 PageTitle 그대로 (astro.config.mjs의 components로 등록)
   content/docs/
     index.mdx             # 홈 (template: splash, hero 없음 — 본문은 <HomeDashboard />)
     numerical/            # index.mdx = 로드맵, fundamentals/introduction.mdx = 1강(공개),
@@ -121,7 +123,7 @@ src/
     coding-skills/        # 부록: index(메인), cpp/(index, legacy-to-modern), python, java, backend/(index, flask, nodejs, spring-boot),
                           #   tools, cheatsheets, posts/<파일명>.mdx = 글 (첫 글을 쓸 때 posts/ 생성)
     guides/, reference/   # Starlight 템플릿 예제 (사이드바 미연결)
-  styles/custom.css       # 전역 커스텀 CSS (현재 규칙 없음 — 여러 페이지 공통 규칙만 둔다)
+  styles/custom.css       # 전역 CSS: 사이트 팔레트(--sl-color-* 연결, --lab-* 토큰), 다크 네이비 헤더, 아이콘형 검색 버튼
   assets/                 # 이미지 (houston.webp는 템플릿 기본 파일)
 public/                   # 정적 파일 (favicon.svg), code/<분야>/ = 다운로드용 전체 코드
 lecture-source/           # 확정 강의 원고·구현 지시서 (예: numerical-analysis/lecture-01.md, fem/lecture-01.md,
@@ -380,7 +382,12 @@ FEM은 긴 수학적 유도보다 **개념적 이해와 계산 과정**을 우�
 
 ## 7. 디자인 원칙
 
-- 홈은 차분한 학술 포털형 대시보드(`src/components/home/HomeDashboard.astro`)이다. 큰 Hero 없이 Starlight 제목(H1 'artcoding Lab') 아래에 'Computational Science & Engineering', 슬로건 '공학을 코드로 이해하다', 한 줄 소개를 둔다.
+- **사이트 팔레트와 헤더** (`src/styles/custom.css`, 사이트 전체 적용): 대학 연구실 포털 분위기의 네이비·슬레이트 계열.
+  - 라이트: 본문 배경 `#EDF0F3`, 카드 `#F9FAFB`, 글자 `#202B38`, 테두리 `#D2D9E1`. 다크: 본문 배경 `#111820`, 카드 `#1C2735`, 글자 `#E5EAF0`, 테두리 `#344254`.
+  - Starlight 토큰(`--sl-color-*`)에 값을 연결해 사이드바·코드 블록·검색 모달이 함께 바뀐다. 토큰을 고칠 때는 파생 토큰(`--sl-color-bg`, `--sl-color-text` 등)도 함께 선언한다(var() 참조는 선언한 요소에서 값이 정해져 상속됨).
+  - **카드·패널·입력 요소의 배경은 `var(--lab-card-bg)`, 테두리는 `var(--lab-card-border)`를 쓴다.** `--sl-color-bg`는 페이지 배경이므로 카드에 쓰면 배경과 구분되지 않는다. 그림(SVG) 안에서 배경색과 같아야 하는 선·채움도 `--lab-card-bg`를 쓴다.
+  - 헤더는 두 테마 모두 다크 네이비(`--lab-header-bg`: 라이트 `#17283D`, 다크 `#111D2C`), 로고는 회백색 텍스트, 검색은 돋보기 아이콘 버튼(Pagefind, ⌘K/Ctrl+K 유지)이다. 헤더 안 검색 모달은 현재 테마 색으로 다시 적용된다.
+- 홈은 차분한 학술 포털형 대시보드(`src/components/home/HomeDashboard.astro`)이다. 큰 Hero 없이, 헤더 로고와 겹치지 않도록 `PageTitle` 오버라이드가 홈에서만 영문 문구 'Computational Science & Engineering'과 H1 '공학을 코드로 이해하다.'를 출력하고, 그 아래 한 줄 소개를 둔다(SEO `<title>`·description은 frontmatter 그대로).
   - 분야 카드 6개(수치해석·FEM·양자·광학·AI·메시 연구 순)는 데스크톱 3열 × 2행, 태블릿(≤900px) 2열, 모바일(≤600px) 1열이다. 카드 높이는 약 120~145px(데스크톱·태블릿), 1px 테두리·작은 반경, 아이콘 없이 네이비·슬레이트 계열로 절제한다. 분야 색은 영문 분야명 앞의 8px 표식에만 쓴다.
   - 카드 하단에는 커리큘럼 규모('12 Parts · 80 Lectures', 메시 연구는 '9 Research Stages · 23 Papers' 형식)를 데이터에서 계산해 표시한다. 숫자를 하드코딩하지 않으며, 공개 강의 수는 홈에 표시하지 않는다.
   - 그 아래 'Developer Resources'(Appendix 배지)에 Coding Skills를 한 줄 박스로 두고 주제 링크(Modern C++, Python, Java, Backend Frameworks, Practical Code Recipes)를 단다.

@@ -88,7 +88,7 @@ const edges = edgeParts.join('');
     padding: 1rem;
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 12px;
-    background: var(--sl-color-bg);
+    background: var(--lab-card-bg);
   }
   .plate-compare__panels {
     display: grid;
@@ -129,7 +129,7 @@ const edges = edgeParts.join('');
     color: var(--sl-color-gray-3);
   }
   .plate-material {
-    fill: color-mix(in srgb, var(--plate-accent) 12%, var(--sl-color-bg));
+    fill: color-mix(in srgb, var(--plate-accent) 12%, var(--lab-card-bg));
   }
   .plate-mesh {
     fill: none;
@@ -144,7 +144,7 @@ const edges = edgeParts.join('');
     stroke-linejoin: round;
   }
   :global(:root[data-theme='dark']) .plate-material {
-    fill: color-mix(in srgb, var(--plate-accent) 22%, var(--sl-color-bg));
+    fill: color-mix(in srgb, var(--plate-accent) 22%, var(--lab-card-bg));
   }
   :global(:root[data-theme='dark']) .plate-mesh {
     stroke: color-mix(in srgb, var(--plate-accent) 45%, var(--sl-color-gray-2));

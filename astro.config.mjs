@@ -42,6 +42,11 @@ export default defineConfig({
 
     // 부록(Coding Skills)과 다른 분야 사이의 이전/다음 페이지 링크를 끊는다 (src/route-data.ts)
     routeMiddleware: './src/route-data.ts',
+
+    // Starlight 컴포넌트 오버라이드 (최소 범위): 홈에서만 제목 영역을 바꾸고, 다른 페이지는 기본 PageTitle을 그대로 쓴다
+    components: {
+      PageTitle: './src/components/overrides/PageTitle.astro',
+    },
     
     defaultLocale: 'root',
     locales: {

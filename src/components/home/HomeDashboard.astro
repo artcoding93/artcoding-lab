@@ -98,10 +98,9 @@ const skillTopics = [
 ---
 
 <div class="home-dash not-content">
+  {/* 영문 소개 문구와 H1 '공학을 코드로 이해하다.'는 PageTitle 오버라이드(src/components/overrides/PageTitle.astro)가 출력한다 */}
   <header class="hd-head">
-    <p class="hd-head__sub" lang="en">Computational Science &amp; Engineering</p>
     <p class="hd-head__intro">
-      <strong>공학을 코드로 이해하다.</strong>{' '}
       수학적·공학적 이론을 직접 구현하고, 시각화와 수치 실험으로 검증하는 학습·연구 플랫폼입니다.
     </p>
   </header>
@@ -168,28 +167,22 @@ const skillTopics = [
   /* 콘텐츠 최대 너비: Starlight splash 기본 67.5rem → 78rem(약 1,248px). 다른 페이지는 그대로이다. */
   :global(:root:has(.home-dash)) {
     --sl-content-width: 78rem;
-    --hd-navy: #1e3a5f;
+    --hd-navy: var(--lab-navy);
     --hd-field-skills: #475569;
   }
   :global(:root[data-theme='dark']:has(.home-dash)) {
-    --hd-navy: #93c5fd;
     --hd-field-skills: #94a3b8;
   }
-  /* 제목(H1)·본문 패널: Hero 대신 Starlight 기본 제목을 작게 쓰고, 두 패널을 하나의 머리말처럼 잇는다 */
+  /* 제목 패널(PageTitle)과 본문 패널을 하나의 짧은 머리말처럼 잇는다 */
   :global(:root:has(.home-dash) main .content-panel) {
     padding-block: 0.75rem;
   }
   :global(:root:has(.home-dash) main .content-panel:has(#_top)) {
-    padding-top: 1.75rem;
+    padding-top: 1.25rem;
     padding-bottom: 0;
   }
   :global(:root:has(.home-dash) main .content-panel + .content-panel) {
     border-top: 0;
-  }
-  :global(:root:has(.home-dash) main h1#_top) {
-    margin: 0;
-    font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2rem);
-    letter-spacing: -0.01em;
   }
 
   /* ── 머리말 ── */
@@ -197,28 +190,16 @@ const skillTopics = [
     color: var(--sl-color-text);
   }
   .hd-head {
-    padding-bottom: 1.1rem;
-    border-bottom: 1px solid var(--sl-color-gray-5);
-  }
-  .hd-head__sub {
-    margin: 0;
-    color: var(--hd-navy);
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--lab-card-border);
   }
   .hd-head__intro {
-    margin: 0.45rem 0 0;
+    margin: 0;
     max-width: 52rem;
     color: var(--sl-color-gray-2);
     font-size: 0.98rem;
     line-height: 1.65;
     word-break: keep-all;
-  }
-  .hd-head__intro strong {
-    color: var(--sl-color-white);
-    font-weight: 600;
   }
 
   /* ── 섹션 ── */
@@ -260,9 +241,9 @@ const skillTopics = [
     gap: 0.2rem;
     min-width: 0;
     padding: 0.85rem 1rem 0.8rem;
-    border: 1px solid var(--sl-color-gray-5);
+    border: 1px solid var(--lab-card-border);
     border-radius: 6px;
-    background: var(--sl-color-bg);
+    background: var(--lab-card-bg);
     color: var(--sl-color-text);
     text-decoration: none;
     transition:
@@ -271,7 +252,7 @@ const skillTopics = [
   }
   .hd-card:hover {
     border-color: var(--hd-navy);
-    background: var(--sl-color-bg-nav);
+    background: color-mix(in srgb, var(--hd-navy) 5%, var(--lab-card-bg));
   }
   .hd-card:focus-visible,
   .hd-dev a:focus-visible {
@@ -378,9 +359,10 @@ const skillTopics = [
     justify-content: space-between;
     gap: 0.6rem 1.5rem;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--sl-color-gray-5);
+    border: 1px solid var(--lab-card-border);
     border-left: 3px solid var(--hd-field-skills);
     border-radius: 6px;
+    background: var(--lab-card-bg);
   }
   .hd-dev__lead {
     display: flex;
